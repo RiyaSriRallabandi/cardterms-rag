@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Secrets — never commit
+.env
+
+# Data — reproduced from manifest, not stored in git
+data/corpus/
+data/cache/
+*.pdf
+
+# OS
+.DS_Store
