@@ -1,0 +1,129 @@
+# Corpus definition for CardTerms.
+#
+# Source: CFPB Credit Card Agreement Database, Q1-2026 quarterly collection.
+# Agreements are collected quarterly under the CARD Act. The corpus is pinned
+# to a single quarter so that evaluation labels remain valid against fixed
+# document text.
+#
+# Issuers are selected by US consumer credit card market presence, so that the
+# system covers the cards a typical cardholder actually holds. That selection
+# also produces the corpus property the retrieval design must handle: several
+# major issuers file under more than one legal entity, and the largest store
+# card issuers file dozens of brand-specific agreements sharing a common
+# template. Identifying the correct agreement therefore depends on exact name
+# matching and metadata rather than semantic similarity alone.
+#
+# Confusable issuer families present in this corpus:
+#   JPMorgan Chase Bank / Chase Bank USA
+#   American Express National Bank / American Express Travel Related Services
+#   Wells Fargo Bank / Wells Fargo & Company
+#   PNC Bank N.A. / PNC Bank, National Association   (same bank, two filings)
+#   TD Bank / TD Bank USA
+#   Comenity Bank / Comenity Capital Bank
+#   Capital One / Capital Bank
+#   Citizens Bank / First-Citizens Bank & Trust
+
+bulk_zip_url: "https://files.consumerfinance.gov/a/assets/bulk_agreements/2026_Q1.zip"
+quarter: "2026-Q1"
+
+# Documents above this length are consolidated filings covering many products
+# under a single submission. Per-document metadata cannot identify which card
+# a passage refers to, so citations drawn from them are not actionable.
+max_pages_per_doc: 60
+
+# Substring matches against doc_uid. Excludes filings that are not consumer
+# cardholder agreements, such as affinity marketing and licensing contracts.
+exclude_patterns:
+  - "license_marketing_support"
+  - "alumni_assn"
+
+# Default per-issuer document cap. Prevents high-volume filers from dominating
+# the corpus and skewing aggregate metrics toward a single institution.
+max_docs_per_issuer: 5
+
+# Caps raised where an issuer's share of the consumer market, or its volume of
+# near-identical brand-specific agreements, warrants deeper coverage.
+docs_per_issuer:
+  "SYNCHRONY FINANCIAL": 20
+  "Comenity Capital Bank": 12
+  "CITIBANK, N.A.": 10
+  "Comenity Bank": 8
+  "COMMERCE BANK": 8
+  "JPMORGAN CHASE BANK, NATIONAL ASSOCIATION": 8
+  "CHASE BANK USA, NATIONAL ASSOCIATION": 8
+  "BANK OF AMERICA, NATIONAL ASSOCIATION": 8
+  "CAPITAL ONE, NATIONAL ASSOCIATION": 8
+  "AMERICAN EXPRESS NATIONAL BANK": 6
+  "WELLS FARGO BANK, NATIONAL ASSOCIATION": 6
+  "U.S. BANK NATIONAL ASSOCIATION": 6
+  "BARCLAYS BANK DELAWARE": 6
+  "PNC Bank N.A.": 6
+  "TD BANK, NATIONAL ASSOCIATION": 6
+  "TD BANK USA, NATIONAL ASSOCIATION": 6
+  "HUNTINGTON NATIONAL BANK, THE": 6
+  "FIRST PREMIER BANK": 6
+
+# Issuer names match CFPB archive folder names exactly.
+issuers:
+
+  # National and regional bank issuers, ordered by consumer market presence.
+  national:
+    - "JPMORGAN CHASE BANK, NATIONAL ASSOCIATION"
+    - "CHASE BANK USA, NATIONAL ASSOCIATION"
+    - "AMERICAN EXPRESS NATIONAL BANK"
+    - "AMERICAN EXPRESS TRAVEL RELATED SERVICES COMPANY, INC."
+    - "CITIBANK, N.A."
+    - "CAPITAL ONE, NATIONAL ASSOCIATION"
+    - "CAPITAL BANK, NATIONAL ASSOCIATION"
+    - "BANK OF AMERICA, NATIONAL ASSOCIATION"
+    - "DISCOVER BANK"
+    - "WELLS FARGO BANK, NATIONAL ASSOCIATION"
+    - "WELLS FARGO & COMPANY"
+    - "U.S. BANK NATIONAL ASSOCIATION"
+    - "BARCLAYS BANK DELAWARE"
+    - "USAA FEDERAL SAVINGS BANK"
+    - "PNC Bank N.A."
+    - "PNC BANK, NATIONAL ASSOCIATION"
+    - "Truist Bank"
+    - "GOLDMAN SACHS BANK USA"
+    - "FIFTH THIRD BANK, NATIONAL ASSOCIATION"
+    - "CITIZENS BANK, NATIONAL ASSOCIATION"
+    - "FIRST-CITIZENS BANK & TRUST COMPANY"
+    - "TD BANK, NATIONAL ASSOCIATION"
+    - "TD BANK USA, NATIONAL ASSOCIATION"
+    - "REGIONS BANK"
+    - "FIRST NATIONAL BANK OF OMAHA"
+    - "COMMERCE BANK"
+    - "HUNTINGTON NATIONAL BANK, THE"
+    - "KEYBANK NATIONAL ASSOCIATION"
+    - "ALLY BANK"
+    - "STATE FARM BANK"
+
+  # Store card issuers. Each files many brand-specific agreements that share a
+  # common template, differing mainly in brand name and fee amounts.
+  retail:
+    - "SYNCHRONY FINANCIAL"
+    - "Comenity Capital Bank"
+    - "Comenity Bank"
+
+  # Credit unions. Shared template language across institutions, and fee
+  # structures that differ systematically from bank issuers.
+  credit_union:
+    - "NAVY FEDERAL CREDIT UNION"
+    - "PENTAGON FEDERAL CREDIT UNION"
+    - "ALLIANT CREDIT UNION"
+    - "SUMMIT CREDIT UNION"
+    - "FIBRE FEDERAL CREDIT UNION"
+    - "1ST UNITED CREDIT UNION"
+    - "OREGON COMMUNITY CREDIT UNION"
+    - "MARINE FEDERAL CREDIT UNION"
+    - "ELGA CREDIT UNION"
+    - "ONPOINT COMMUNITY CREDIT UNION"
+
+  # Issuers serving subprime and credit-building segments. Fee structures
+  # include monthly maintenance and annual fees uncommon among prime issuers,
+  # which makes cross-issuer comparisons non-trivial.
+  subprime:
+    - "FIRST PREMIER BANK"
+    - "MERRICK BANK"
+    - "Mission Lane LLC"
