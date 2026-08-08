@@ -49,6 +49,17 @@ def file_id_from_path(zip_path: str) -> str:
     match = FILE_ID_RE.search(zip_path)
     return match.group(1) if match else "0"
 
+def _repair_zip_encoding(text: str) -> str:
+    """Recover names stored as UTF-8 but decoded as CP437.
+
+    The archive omits the UTF-8 flag, so zipfile falls back to CP437 and
+    characters such as ® arrive as mojibake.
+    """
+    try:
+        return text.encode("cp437").decode("utf-8")
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return text
+
 
 def product_from_path(zip_path: str) -> str:
     """Provisional product name derived from the filename.
@@ -56,7 +67,7 @@ def product_from_path(zip_path: str) -> str:
     Several issuers name filings with internal codes rather than card names.
     Product names are resolved from document text during parsing.
     """
-    name = Path(zip_path).name
+    name = _repair_zip_encoding(Path(zip_path).name)
     name = FILE_ID_RE.sub("", name)
     name = re.sub(r"\.pdf$", "", name, flags=re.IGNORECASE)
     return re.sub(r"[_\-]+", " ", name).strip()
@@ -68,7 +79,7 @@ def profile_pdf(path: Path) -> tuple[int, bool, int]:
         with fitz.open(path) as doc:
             pages = doc.page_count
             chars = sum(len(page.get_text()) for page in doc)
-    except Exception as exc: # noqa: BLE001 - a malformed file must not halt a batch scan
+    except Exception as exc:  # noqa: BLE001 - a malformed file must not halt a batch scan
         log.warning("pdf_unreadable", file=str(path), error=str(exc))
         return 0, False, 0
     chars_per_page = chars / pages if pages else 0
@@ -87,13 +98,24 @@ def select_documents(
     Filings whose contents duplicate an already-selected file are skipped;
     several issuers submit the same document repeatedly within a quarter.
     """
+    skip_patterns = [p.lower() for p in (cfg.get("skip_filename_patterns") or [])]
+
     candidates: dict[str, list[tuple[str, int]]] = defaultdict(list)
+    skipped_by_pattern = 0
+
     for info in archive.infolist():
         if not info.filename.lower().endswith(".pdf"):
             continue
         issuer = issuer_from_path(info.filename)
-        if issuer in bucket_of:
-            candidates[issuer].append((info.filename, info.file_size))
+        if issuer not in bucket_of:
+            continue
+        if any(pattern in info.filename.lower() for pattern in skip_patterns):
+            skipped_by_pattern += 1
+            continue
+        candidates[issuer].append((info.filename, info.file_size))
+
+    if skipped_by_pattern:
+        log.info("skipped_by_filename_pattern", count=skipped_by_pattern)
 
     overrides = cfg.get("docs_per_issuer") or {}
     default_cap = cfg.get("max_docs_per_issuer", 5)

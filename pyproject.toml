@@ -10,18 +10,17 @@ requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",
     "pandas>=3.0.5",
+    "pillow>=12.3.0",
     "psycopg[binary]>=3.3.4",
     "pydantic>=2.13.4",
     "pydantic-settings>=2.14.2",
     "pymupdf>=1.28.0",
+    "pytesseract>=0.3.13",
     "pyyaml>=6.0.3",
     "structlog>=26.1.0",
     "tqdm>=4.70.0",
     "typer>=0.27.1",
 ]
-
-[project.scripts]
-cardterms = "cardterms:main"
 
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]

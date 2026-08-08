@@ -36,6 +36,24 @@ max_pages_per_doc: 60
 exclude_patterns:
   - "license_marketing_support"
   - "alumni_assn"
+  # Chase collection 00035 is the Spanish edition of the in-branch Visa
+  # agreement. Both filing entities submit it under a bare collection code,
+  # so it carries no filename marker.
+  - "col00035"
+  # Amendment to a license and marketing agreement between the credit union
+  # and a university alumni association. Filename carries no marker matching
+  # the pattern above.
+  - "osuaa"
+
+# Several issuers file Spanish translations of agreements published separately
+# in English. Translations are longer than their English originals, so
+# largest-first selection favours them; skipping them at selection time allows
+# the English filing to take the slot instead.
+skip_filename_patterns:
+  - "spanish"
+  - "espanol"
+  - "español"
+  - "traduccion"
 
 # Default per-issuer document cap. Prevents high-volume filers from dominating
 # the corpus and skewing aggregate metrics toward a single institution.
