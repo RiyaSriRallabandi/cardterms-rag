@@ -238,3 +238,91 @@ Synchrony filings, so retrieving any of the other 17 returns the correct value
 from the wrong document and is scored as a miss. This separates retrieval
 quality from answer correctness, which is the reason a citation-based system
 is worth building rather than simply asking a model.
+
+
+## Task 6 — Evaluation harness and lexical baseline
+
+A single command now takes a configuration, retrieves over the evaluation set,
+scores the result and writes a permanent record. BM25 was implemented first
+because keyword retrieval needs no model, so the harness could be validated end
+to end on real data before any embeddings existed — and the lexical baseline
+that every later result is measured against arrived with it.
+
+Design:
+
+- Labelled character spans are resolved to chunks by range overlap: a chunk is
+  relevant when it lies in a labelled document and their character ranges
+  intersect. One evaluation set therefore scores all nine chunk sets without
+  modification.
+- Hit rate and recall are both reported because they answer different
+  questions. A single-fact question is satisfied by any one relevant passage
+  reaching the context; a comparison question requires every side. Reporting
+  either alone would systematically flatter or penalise whole categories.
+- Precision@k is computed but not used to choose between configurations. With
+  roughly two relevant chunks, precision@5 cannot exceed 0.4 regardless of
+  ranking quality, and observed values top out at 0.157.
+- Document-level hit rate is recorded separately as a diagnostic. It separates
+  retrieval of the wrong issuer from retrieval of the right document at the
+  wrong passage — two failures with different fixes.
+- The 15 unanswerable and ambiguous questions are excluded from retrieval
+  scoring rather than scored as zero; they are evaluated in generation.
+  Counting them as failures would depress every aggregate by a fifth.
+- Every aggregate carries a bootstrap 95% confidence interval over 1,000
+  resamples of the question set.
+- Metrics are unit-tested against a hand-computed example. A wrong metric does
+  not raise an error; it returns a plausible number and invalidates everything
+  built on it.
+- Runs store their resolved configuration and git commit and are never
+  overwritten. Command-line overrides are folded into the stored configuration,
+  so the record describes what ran rather than what the file said.
+
+Lexical baseline, 61 scored questions:
+
+| chunk set                 | hit@5 | hit@10 | recall@5 | MRR   | doc hit@5 |
+|---------------------------|-------|--------|----------|-------|-----------|
+| fixed_1024_ov0            | 0.639 | 0.770  | 0.549    | 0.486 | 0.869 |
+| fixed_512_ov0             | 0.574 | 0.623  | 0.492    | 0.388 | 0.902 |
+| fixed_512_ov15            | 0.541 | 0.639  | 0.451    | 0.321 | 0.918 |
+| recursive_512_ov15        | 0.492 | 0.623  | 0.410    | 0.290 | 0.902 |
+| recursive_512_ov0         | 0.459 | 0.492  | 0.373    | 0.271 | 0.869 |
+| structure_aware_512_ov0   | 0.426 | 0.525  | 0.353    | 0.277 | 0.852 |
+| structure_aware_512_ov15  | 0.426 | 0.525  | 0.339    | 0.282 | 0.836 |
+| parent_doc_512_ov0        | 0.426 | 0.541  | 0.353    | 0.280 | 0.836 |
+| fixed_256_ov0             | 0.213 | 0.295  | 0.193    | 0.161 | 0.852 |
+
+Findings:
+
+- **Comparing chunk sizes at fixed k was misleading.** 1024-token chunks
+  appeared to beat 512 by 6.5 points, but five of them carry twice the context.
+  At equal token budget the two are indistinguishable: 1024 at k=5 scores 0.639
+  against 512 at k=10 scoring 0.623, both around 5,100 tokens of context.
+- **256-token chunks are genuinely worse, not merely under-budgeted.** At equal
+  budget of roughly 2,560 tokens, 512 at k=5 scores 0.574 against 256 at k=10
+  scoring 0.295. This constrains the embedding comparison directly:
+  all-MiniLM-L6-v2 accepts only 256 tokens, so it is confined to the one chunk
+  configuration that demonstrably underperforms.
+- **Document identification is easy; passage identification is not.** Document
+  hit rate sits between 0.84 and 0.92 across every configuration while chunk
+  hit rate ranges from 0.21 to 0.64. Of 26 failures at k=5 on the best set, 20
+  retrieved the correct agreement and the wrong passage from it; only 6
+  retrieved the wrong document.
+- **Every within-document sibling question failed.** All three Saks questions,
+  both myAcademy questions, and the Target and OpenSky questions where one
+  filing covers two products. Those questions were written so that
+  document-level information could not solve them, and it did not.
+- **Only the 256-token set is clearly separated statistically.** The remaining
+  eight configurations have heavily overlapping confidence intervals; the
+  widest gap, between fixed_1024 and the structure-aware group, is marginal.
+  No chunking strategy can yet be declared better than another.
+
+Consequence for the planned experiments: metadata filtering can address at most
+6 of 26 failures, while reranking targets the remaining 20 directly, since a
+cross-encoder scores query and passage together and that is precisely the
+"which paragraph within this document" problem. Reranking moves earlier in the
+ladder and metadata filtering later.
+
+Methodological note for later comparisons: independent confidence intervals are
+a conservative test. Because every configuration is evaluated on the same
+questions, paired testing — McNemar's test on per-question outcomes — will
+detect smaller real differences and should be used in the retrieval
+experiments.
