@@ -171,3 +171,70 @@ order overlapping chunk ranges, so it compared non-adjacent chunks and
 reported gaps that did not exist. Coverage is now computed by merging
 intervals per document. A verification tool that reports false failures costs
 as much as one that misses real ones.
+
+
+## Task 5 — Evaluation set
+
+76 questions and 105 labels: single fact (20), entity-confusable (21), table
+lookup (9), comparison (11), unanswerable (10), ambiguous (5). Fifteen
+questions carry no labels by design; 23 carry more than one.
+
+Design:
+
+- Ground truth is stored as character spans into document text rather than
+  chunk identifiers. Chunk identifiers change whenever chunking strategy
+  changes, which is itself the first planned experiment; span-based labels
+  remain valid across all nine chunk sets, and a chunk scores as relevant when
+  its character range overlaps a labelled span.
+- 51 candidate questions were drafted by an LLM from passages sampled across
+  market segments and biased toward text containing monetary amounts. Each was
+  verified by hand; 31 were kept. Rejections fell into four groups: questions
+  targeting federally mandated billing-rights language that appears in most of
+  the corpus and so has hundreds of equally valid sources; quotes too short to
+  locate uniquely; cards identified only by internal filing codes, which no
+  cardholder would use; and questions whose quote did not answer them.
+- The remaining 45 questions were written by hand. The entity-confusable,
+  unanswerable, comparison and ambiguous categories all depend on knowing what
+  the corpus contains and what it lacks, which an LLM drafting from a single
+  passage cannot know.
+- The loader rejects any quote that is absent from its document or that appears
+  more than once without an explicit flag, and rolls back rather than loading
+  partially. This caught 13 defective labels across two loads. An ambiguous
+  quote resolves to an arbitrary position, producing a label that points at
+  text which does not answer the question — an error that raises no exception
+  and would depress every recall figure thereafter.
+
+Entity-confusable questions take three forms, in increasing difficulty:
+
+- Cross-document siblings whose values differ. OpenSky Gold charges a $59
+  annual fee; OpenSky Plus charges none. The rest of both fee tables is
+  identical.
+- Within-document siblings. One Comenity filing states 31.99% for the Saks
+  World Mastercard and 35.99% for the Saks store card, so document-level
+  metadata filtering cannot help and only chunk-level retrieval can succeed.
+- Identical-content siblings. The Venmo Visa and Venmo Visa Signature filings
+  are byte-identical, so no amount of content matching distinguishes them and
+  only product metadata can.
+
+Unanswerable questions cover three distinct failure modes rather than one:
+facts that live in other document types, such as sign-up bonuses; genuine
+corpus gaps, such as Chase filings that name no product; and correct refusals
+that are not gaps at all — the American Express Platinum Card discloses no APR
+because it is a charge card, so an invented figure is wrong in a different way
+than a guess at a missing fact.
+
+Extending labels to sibling filings could not be automated by document
+similarity. One issuer's template is shared closely enough that two different
+products score 0.84 on sampled-passage overlap while a genuine duplicate pair
+scores 0.68; the distributions overlap, so no threshold separates them. Five
+equivalence groups are enumerated explicitly instead, adding 15 labels. Where
+a sibling turned out to be a partial rather than a complete duplicate, the
+quote was absent and no label was added — the Saks store-card filing omits the
+World Mastercard rate table.
+
+The same shared-template property makes several questions harder than their
+category suggests. The minimum interest charge is stated identically across 18
+Synchrony filings, so retrieving any of the other 17 returns the correct value
+from the wrong document and is scored as a miss. This separates retrieval
+quality from answer correctness, which is the reason a citation-based system
+is worth building rather than simply asking a model.

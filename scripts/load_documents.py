@@ -23,12 +23,13 @@ def main() -> None:
             conn.execute(
                 """
                 INSERT INTO documents
-                    (doc_uid, issuer, product_name, filename_product,
+                    (doc_uid, issuer, bucket, product_name, filename_product,
                      effective_quarter, source_url, sha256, page_count,
                      is_scanned)
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                 ON CONFLICT (doc_uid) DO UPDATE SET
                     issuer            = EXCLUDED.issuer,
+                    bucket            = EXCLUDED.bucket,
                     product_name      = CASE
                                           WHEN documents.parsed_at IS NULL
                                           THEN EXCLUDED.product_name
@@ -43,6 +44,7 @@ def main() -> None:
                 (
                     row.doc_uid,
                     row.issuer,
+                    row.bucket,
                     row.product_name,
                     row.product_name,
                     row.quarter,
