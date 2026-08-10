@@ -56,8 +56,16 @@ MIN_WORDLIKE_SCORE = 5.0
 WORDLIKE_MIN_CHARS = 300
 
 COMMON_WORDS = (
-    " the ", " and ", " you ", " to ", " of ",
-    " your ", " we ", " or ", " a ", " in ",
+    " the ",
+    " and ",
+    " you ",
+    " to ",
+    " of ",
+    " your ",
+    " we ",
+    " or ",
+    " a ",
+    " in ",
 )
 
 
@@ -264,6 +272,7 @@ def _image_regions(page: fitz.Page, table_boxes: list[fitz.Rect]) -> list[fitz.R
 
     return regions
 
+
 def _wordlike_score(text: str) -> float:
     """Common-word occurrences per 1000 characters."""
     if len(text) < WORDLIKE_MIN_CHARS:
@@ -271,6 +280,7 @@ def _wordlike_score(text: str) -> float:
     lowered = " " + text.lower() + " "
     hits = sum(lowered.count(word) for word in COMMON_WORDS)
     return hits / (len(text) / 1000)
+
 
 def parse_pdf(path, extract_tables: bool = True) -> ParsedDocument:
     pages: list[ParsedPage] = []
@@ -283,9 +293,7 @@ def parse_pdf(path, extract_tables: bool = True) -> ParsedDocument:
             region_texts: list[str] = []
 
             page_text = "\n\n".join(
-                segment
-                for segment in [body, *(t.markdown for t in tables)]
-                if segment
+                segment for segment in [body, *(t.markdown for t in tables)] if segment
             )
 
             if len(body) < OCR_CHAR_THRESHOLD and not tables:

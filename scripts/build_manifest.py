@@ -49,6 +49,7 @@ def file_id_from_path(zip_path: str) -> str:
     match = FILE_ID_RE.search(zip_path)
     return match.group(1) if match else "0"
 
+
 def _repair_zip_encoding(text: str) -> str:
     """Recover names stored as UTF-8 but decoded as CP437.
 

@@ -109,3 +109,65 @@ Known limitations:
 
 Verification is automated in `scripts/verify_parsing.py`: six structural checks
 that block a freeze, and five content checks reported as warnings.
+
+## Task 4 — Chunking
+
+Nine chunk sets built and stored concurrently, so strategies are chosen by
+measurement rather than inspection.
+
+| set                       | chunks | mean tokens |
+|---------------------------|--------|-------------|
+| fixed_256_ov0             | 10,272 | 244 |
+| fixed_512_ov0             |  5,274 | 467 |
+| fixed_512_ov15            |  5,767 | 472 |
+| fixed_1024_ov0            |  2,665 | 915 |
+| recursive_512_ov0         |  5,487 | 440 |
+| recursive_512_ov15        |  5,873 | 442 |
+| structure_aware_512_ov0   |  6,517 | 370 |
+| structure_aware_512_ov15  |  6,663 | 379 |
+| parent_doc_512_ov0        | 10,813 | 446 |
+
+Decisions:
+
+- A single canonical tokenizer produces every chunk set, so a chunk set is
+  independent of the embedding model applied to it. Embedding models are then
+  compared on identical text rather than on boundaries their own tokenizers
+  produced.
+- A 256-token set exists because all-MiniLM-L6-v2 accepts only 256 tokens and
+  discards the remainder silently. Evaluating it on 512-token chunks would
+  throw away half of every chunk with no error raised.
+- All strategies split documents into atomic spans and pack them to a budget.
+  Detected tables are single atoms; separating a fee value from its row label
+  makes the value unusable.
+- Chunks are stored as character spans into the document text, so each chunk
+  resolves to a physical page and span-based evaluation labels can be matched
+  to chunks regardless of the strategy that produced them.
+
+Four defects found by verification, none of which raised an error:
+
+- Structure-aware chunking built prose atoms across whole sections including
+  table regions, then appended the tables again. Table text was counted twice,
+  filling the budget at double speed: 15,612 chunks averaging 168 tokens
+  against a 512 budget, with 490 chunk boundaries falling inside tables.
+- Fixed-window chunking produced atoms as large as the chunk budget, leaving
+  nothing to carry forward, so overlap silently did nothing — the 15% overlap
+  set differed from the zero-overlap set by 4 chunks out of 5,733.
+- Heading detection fired on capitalised clause blocks, which are standard in
+  credit agreements and wrap into runs of short unpunctuated lines. Sections
+  below a minimum length are now merged into their neighbour, which bounds the
+  effect of heuristic heading detection regardless of why it misfires.
+- Heading detection matched known headings by prefix, so any line beginning
+  with a known heading word was accepted before the punctuation and length
+  guards ran — prose fragments such as "fees and foreign transaction fees."
+  became section boundaries. Exact matching fixed it. Residual false positives
+  are mailing addresses, which are title-cased and unpunctuated and cannot be
+  distinguished heuristically; they affect section labels only, not chunk
+  boundaries.
+
+The verification tool was itself wrong twice before it was right. Postgres
+`btrim` with one argument strips spaces but not newlines, so paragraph
+separators registered as lost content; and a `lag` window function cannot
+order overlapping chunk ranges, so it compared non-adjacent chunks and
+reported gaps that did not exist. Coverage is now computed by merging
+intervals per document. A verification tool that reports false failures costs
+as much as one that misses real ones.

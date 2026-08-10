@@ -233,10 +233,13 @@ def check_tables_found(conn) -> Result:
         fatal=False,
     )
 
+
 def check_text_is_readable(conn) -> Result:
     """Text layers with damaged font encodings extract as glyph codes."""
     words = (" the ", " and ", " you ", " to ", " of ", " your ", " we ", " or ")
-    rows = conn.execute("SELECT doc_uid, issuer, char_count, raw_text FROM documents").fetchall()
+    rows = conn.execute(
+        "SELECT doc_uid, issuer, char_count, raw_text FROM documents"
+    ).fetchall()
     bad = []
     for row in rows:
         text = row["raw_text"] or ""
@@ -245,7 +248,13 @@ def check_text_is_readable(conn) -> Result:
         lowered = " " + text.lower() + " "
         score = sum(lowered.count(w) for w in words) / (len(text) / 1000)
         if score < 5.0:
-            bad.append({"doc_uid": row["doc_uid"], "issuer": row["issuer"], "score": round(score, 1)})
+            bad.append(
+                {
+                    "doc_uid": row["doc_uid"],
+                    "issuer": row["issuer"],
+                    "score": round(score, 1),
+                }
+            )
     return Result(
         "Extracted text is readable",
         not bad,

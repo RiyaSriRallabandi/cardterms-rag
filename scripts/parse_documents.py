@@ -182,6 +182,7 @@ def persist(conn, doc_id: int, result: dict) -> None:
 # sharing its code.
 COLLECTION_CODE_RE = re.compile(r"col(\d{4,6})", re.IGNORECASE)
 
+
 def _strip_code(name: str) -> str:
     return COLLECTION_CODE_RE.sub("", name or "").strip(" _-")
 
