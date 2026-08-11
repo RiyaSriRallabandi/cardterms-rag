@@ -1,0 +1,29 @@
+-- Approximate nearest-neighbour indexing: benchmarked, not retained.
+--
+-- Partial indexes are required rather than one index per table. Queries always
+-- filter by model and prefix scheme, and an unfiltered ANN index combined with
+-- a WHERE clause post-filters: the index returns nearest neighbours across all
+-- models, the filter discards most of them, and fewer than k rows come back.
+--
+-- Measured at 5,274 vectors, top-10, 76 queries:
+--
+--     exact          recall 1.000    13.6 ms median
+--     hnsw ef=40     recall 0.951     1.1 ms
+--     hnsw ef=100    recall 0.987     1.5 ms
+--
+-- HNSW is nine to twelve times faster, but saves roughly twelve milliseconds
+-- on a request where generation takes one to five seconds. The index is not
+-- retained: the latency is immaterial at this scale, and approximate search
+-- would make recorded evaluation runs incomparable with later ones. The
+-- statements are preserved for reference and become worthwhile at corpus sizes
+-- two to three orders of magnitude larger.
+--
+-- CREATE INDEX idx_emb384_bge_small_hnsw
+--     ON embeddings_384 USING hnsw (vec vector_cosine_ops)
+--     WITH (m = 16, ef_construction = 64)
+--     WHERE model = 'bge-small' AND prefix_scheme = 'standard';
+--
+-- CREATE INDEX idx_emb768_bge_base_hnsw
+--     ON embeddings_768 USING hnsw (vec vector_cosine_ops)
+--     WITH (m = 16, ef_construction = 64)
+--     WHERE model = 'bge-base' AND prefix_scheme = 'standard';

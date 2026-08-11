@@ -400,3 +400,32 @@ prefix scheme stored per row. Several models and the prefix ablation therefore
 coexist over the same chunks without re-indexing. Vectors are normalised to
 unit length so cosine distance, inner product and Euclidean distance rank
 identically.
+
+## Task 8 — Vector indexing
+
+Approximate nearest-neighbour search was benchmarked against exact search
+rather than adopted by default.
+
+| method       | recall vs exact | median | p95    |
+|--------------|-----------------|--------|--------|
+| exact scan   | 1.000           | 13.6 ms| 15.0 ms|
+| hnsw ef=10   | 0.786           |  0.9 ms|  2.9 ms|
+| hnsw ef=20   | 0.900           |  1.0 ms|  1.7 ms|
+| hnsw ef=40   | 0.951           |  1.1 ms|  1.7 ms|
+| hnsw ef=100  | 0.987           |  1.5 ms|  2.0 ms|
+| hnsw ef=200  | 0.987           |  2.0 ms|  2.9 ms|
+
+- Partial indexes are required, one per model and prefix scheme. Queries always
+  filter on those columns, and an unfiltered ANN index combined with a WHERE
+  clause post-filters — returning neighbours across all models, discarding most
+  of them, and yielding fewer than k results.
+- HNSW is nine to twelve times faster than exact scan and reaches 0.987 recall
+  at ef=100. Recall saturates there; ef=200 costs 33% more time for no gain.
+- **The index was not retained.** It saves roughly twelve milliseconds on a
+  request where generation takes one to five seconds — under one percent of
+  end-to-end latency — while introducing a recall loss that would make recorded
+  evaluation runs incomparable with later ones. Approximate search becomes
+  worthwhile two to three orders of magnitude higher in corpus size.
+- Part of the 13.6 ms exact-search cost is join and filter overhead rather than
+  distance computation, so the achievable saving is smaller than the raw
+  comparison implies.
