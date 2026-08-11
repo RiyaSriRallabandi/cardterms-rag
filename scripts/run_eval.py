@@ -24,6 +24,7 @@ from cardterms.eval.stats import bootstrap_ci
 from cardterms.logging import bind_run, configure_logging, log, new_run_id
 from cardterms.retrieve.bm25 import BM25Retriever
 from cardterms.retrieve.dense import DenseRetriever
+from cardterms.retrieve.rerank import CrossEncoderReranker
 
 # Questions with no labelled answer are scored in generation, not retrieval.
 UNSCORED_CATEGORIES = ("unanswerable", "ambiguous")
@@ -54,6 +55,14 @@ def main() -> None:
     parser.add_argument("--model", help="embedding model key, required for dense")
     parser.add_argument("--no-prefix", action="store_true")
     parser.add_argument("--note", default="")
+    parser.add_argument("--rerank", choices=["ms-marco", "bge"])
+    parser.add_argument(
+        "--candidates",
+        type=int,
+        default=50,
+        help="pool size retrieved before reranking",
+    )
+    parser.add_argument("--augment-rerank", action="store_true")
     args = parser.parse_args()
 
     if args.mode == "dense" and not args.model:
@@ -80,6 +89,15 @@ def main() -> None:
             run_name += "_noprefix"
     else:
         run_name = f"bm25_{chunk_set}"
+
+    if args.rerank:
+        resolved["reranking"]["enabled"] = True
+        resolved["reranking"]["model_name"] = args.rerank
+        resolved["reranking"]["candidate_pool"] = args.candidates
+        resolved["reranking"]["augmented"] = args.augment_rerank
+        run_name += f"_rr-{args.rerank}-{args.candidates}"
+        if args.augment_rerank:
+            run_name += "-aug"
 
     run_id = new_run_id()
     bind_run(run_id, chunk_set=chunk_set, mode=args.mode)
@@ -120,6 +138,12 @@ def main() -> None:
         else:
             retriever = BM25Retriever.from_chunk_set(conn, chunk_set)
 
+        reranker = (
+            CrossEncoderReranker(conn, args.rerank, augment=args.augment_rerank)
+            if args.rerank
+            else None
+        )
+
         # The dense retriever queries through this connection, so retrieval
         # runs inside the same block.
         for question in tqdm(questions, desc=run_name):
@@ -127,7 +151,11 @@ def main() -> None:
                 continue
 
             started = time.perf_counter()
-            results = retriever.search(question["question"], depth)
+            if reranker:
+                pool = retriever.search(question["question"], args.candidates)
+                results = reranker.rerank(question["question"], pool, depth)
+            else:
+                results = retriever.search(question["question"], depth)
             latency_ms = (time.perf_counter() - started) * 1000
 
             chunk_ids = [chunk_id for chunk_id, _, _ in results]

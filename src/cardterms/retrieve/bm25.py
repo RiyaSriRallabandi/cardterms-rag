@@ -29,8 +29,13 @@ class BM25Retriever:
     def from_chunk_set(cls, conn, chunk_set_name: str) -> "BM25Retriever":
         rows = conn.execute(
             """
-            SELECT c.id, c.text, c.doc_id
-            FROM chunks c JOIN chunk_sets s ON s.id = c.chunk_set_id
+            SELECT c.id, c.doc_id,
+                   coalesce(d.product_name, d.filename_product, '') || ' — ' ||
+                   d.issuer || ' — ' ||
+                   coalesce(c.section_path, '') || E'\\n' || c.text AS text
+            FROM chunks c
+            JOIN chunk_sets s ON s.id = c.chunk_set_id
+            JOIN documents d ON d.id = c.doc_id
             WHERE s.name = %s AND NOT c.is_parent
             ORDER BY c.id
             """,

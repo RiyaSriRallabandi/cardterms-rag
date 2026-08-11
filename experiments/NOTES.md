@@ -429,3 +429,88 @@ rather than adopted by default.
 - Part of the 13.6 ms exact-search cost is join and filter overhead rather than
   distance computation, so the achievable saving is smaller than the raw
   comparison implies.
+
+
+  ## Task 9 — Reranking and retrieval experiments
+
+Final configuration: lexical retrieval over metadata-augmented chunk text to a
+pool of 50, reranked by bge-reranker-base with the same metadata prepended,
+returning 5. Chunk set: fixed 512 tokens, no overlap.
+
+| configuration                        | hit@5 | hit@50 | MRR   | doc hit@5 | entity-conf |
+|--------------------------------------|-------|--------|-------|-----------|-------------|
+| baseline: bm25, plain index          | 0.574 | 0.754  | 0.388 | 0.902     | 0.524 |
+| + ms-marco reranker, pool 50         | 0.492 | 0.754  | 0.352 | 0.803     | 0.571 |
+| + ms-marco reranker, pool 20         | 0.492 |   —    | 0.361 | 0.820     | 0.524 |
+| + bge reranker, pool 50              | 0.623 | 0.754  | 0.413 | 0.836     | 0.619 |
+| + bge reranker, pool 100             | 0.607 | 0.787  | 0.418 | 0.803     | 0.619 |
+| + metadata in reranker input         | 0.639 | 0.754  | 0.493 | 0.902     | 0.667 |
+| + metadata in indexed text (final)   | 0.787 | 0.967  | 0.606 | 0.967     | 0.762 |
+
+Final per-category hit@5: single fact 0.850, table lookup 0.889,
+entity-confusable 0.762, comparison 0.636.
+
+Chunking, re-tested under reranking: fixed 0.623, structure-aware 0.508,
+recursive 0.443 — the same ordering as under plain keyword search.
+
+Findings:
+
+- **Supplying document identity was the largest lever, and it applied twice.**
+  Many chunks are bare table fragments such as "| Annual Fee | $89 |" that name
+  no product, so neither retriever nor reranker can connect them to a question
+  naming a card. Chunking had removed context the document itself provided.
+  Prepending product, issuer and section to the reranker's input raised hit@5
+  from 0.623 to 0.639 and restored document accuracy from 0.836 to 0.902.
+  Applying the same augmentation to the indexed text raised hit@5 to 0.787 and
+  hit@50 from 0.754 to 0.967 — improving the candidate pool itself, not merely
+  its ordering. Single-fact questions gained 35 points against baseline and
+  table lookups 33.
+- **The reranker model mattered more than any other single component choice.**
+  An identical pipeline swung 13 points between two cross-encoders:
+  ms-marco-MiniLM lost 8 points, bge-reranker-base gained 5. Pool size made no
+  difference for ms-marco, so it is systematically wrong rather than noisy —
+  consistent with a model trained on conversational web passages misjudging
+  Markdown fee tables. Under ms-marco, table-lookup and single-fact accuracy
+  fell while entity-confusable rose, the signature of a reranker that
+  downranks tabular text.
+- **Larger candidate pools did not help.** Pool 100 scored below pool 50: more
+  candidates give the reranker more opportunities to promote the wrong one.
+- **A headroom estimate is conditional on the retriever that produced it.** The
+  0.754 ceiling measured in Task 7 was a property of the plain BM25 pool, not
+  of the corpus. Changing what BM25 indexes moved it to 0.967.
+- **Concentration traded against diversity.** Because every chunk in a document
+  carries the same header, the augmented index draws more chunks from the
+  highest-scoring document into the pool. Every single-document category
+  improved; comparison questions, which require passages from two documents,
+  fell from 0.818 to 0.636 — two of eleven. A measured cost, not a defect.
+- **Chunking results were stable across ranking mechanisms.** Fixed-size
+  chunking beat recursive and structure-aware both with and without reranking.
+  Agreement across two unrelated ranking methods is stronger evidence than
+  either result alone.
+
+Statistical treatment:
+
+- Two paired tests are reported because they measure different things.
+  McNemar's test asks whether a relevant chunk reached the top five, which is
+  binary and registers nothing when an answer moves from rank 9 to rank 6.
+  Wilcoxon signed-rank on per-question reciprocal rank uses the magnitude of
+  every change.
+- Reranking alone against baseline: McNemar p = 0.34 (not significant),
+  Wilcoxon p = 0.031 (significant). McNemar saw 10 questions change; Wilcoxon
+  saw 31. Reporting only the binary test would have understated a real effect.
+- Metadata-augmented index against plain index: McNemar p = 0.035, Wilcoxon
+  p = 0.036.
+- Final configuration against baseline: hit@5 0.574 to 0.787 (19 fixed, 6
+  broken, p = 0.0146); MRR 0.388 to 0.606 (35 improved, 11 worsened,
+  p = 0.0007).
+
+Method note: the indexed text includes metadata drawn from the document's own
+parsed fields, so the retriever is matching against enriched text rather than
+the document's raw wording. This is contextual retrieval and is described as
+such rather than reported as plain BM25.
+
+Remaining headroom: 0.787 against a hit@50 of 0.967. Eleven questions sit in
+the candidate pool without being promoted into the top five, and two are not
+retrieved at depth 50 at all. Both groups are carried into error analysis.
+Larger pools were tested and rejected, so further gains would require a
+stronger reranker rather than better candidates.
