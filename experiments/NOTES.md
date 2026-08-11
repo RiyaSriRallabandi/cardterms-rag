@@ -5,6 +5,15 @@ technical report.
 
 ---
 
+The experiment order has been revised three times by measurement rather than
+assumption: metadata filtering demoted after error analysis showed only 6 of 26
+failures were wrong-document; hybrid search demoted after complementarity
+analysis showed a 5-point ceiling; reranking promoted after a depth probe
+showed an 18-point ceiling. Each revision came from decomposing an aggregate
+score into diagnostics, not from a better aggregate score.
+
+---
+
 ## Task 1 — Scaffolding
 
 Decisions:
@@ -326,3 +335,68 @@ a conservative test. Because every configuration is evaluated on the same
 questions, paired testing — McNemar's test on per-question outcomes — will
 detect smaller real differences and should be used in the retrieval
 experiments.
+
+## Task 7 — Embeddings and dense retrieval
+
+Three open-weight embedding models compared on identical chunk sets using one
+canonical tokenizer, so model quality is the only variable. Exact search
+throughout; no approximate index, since its recall cost has not yet been
+measured.
+
+| retriever                    | hit@5 | doc hit@5 | entity-confusable |
+|------------------------------|-------|-----------|-------------------|
+| bm25, 512-token chunks       | 0.574 | 0.902     | 0.524 |
+| bge-small (33M, 384 dims)    | 0.541 | 0.836     | 0.571 |
+| bge-base (109M, 768 dims)    | 0.492 | 0.770     | 0.524 |
+| minilm on 512-token chunks   | 0.410 | 0.754     | 0.333 |
+| minilm on 256-token chunks   | 0.148 | 0.705     | 0.143 |
+
+Findings:
+
+- **Keyword search beat every dense model.** The corpus is near-identical legal
+  documents where questions turn on exact product names and specific amounts —
+  precisely what exact-token matching is for, and what semantic similarity
+  blurs. Confidence intervals overlap, so the difference is not statistically
+  decisive, but the direction is consistent across every metric.
+- **Model capacity did not help.** bge-base has three times the parameters and
+  twice the dimensions of bge-small, and scored worse on every measure,
+  including a 7-point drop in document identification.
+- **Truncation outperformed fitting the model to the chunk.** MiniLM reads 256
+  tokens. On 256-token chunks it scored 0.148; on 512-token chunks, where it
+  sees only the first half, 0.410. Ranking on the first half while delivering
+  the whole chunk to the context beats halving the chunk size, because
+  256-token granularity performs badly for both retrievers. Counterintuitive,
+  and only visible because both arms were run.
+- **The BGE query prefix had a small effect**: identical hit rate, MRR down 8%
+  without it (0.373 to 0.344). Real but smaller than the model card implies.
+- **Dense rescued three questions, all of one shape** — "what number do I call"
+  against text reading "Customer Care", where the question and the answer share
+  no vocabulary. That is the textbook case for embeddings, and on this corpus
+  it is worth three questions.
+
+Headroom analysis, which reordered the remaining experiments:
+
+- **Hybrid retrieval has a 5-point ceiling.** An oracle choosing the better of
+  BM25 and dense per question would reach 0.623 against BM25's 0.574. Only 3 of
+  61 questions are found by dense and missed by BM25.
+- **Reranking has an 18-point ceiling.** 46 of 61 answers are already retrieved
+  by depth 50 but ranked below the cut; at k=5 only 35 are. Reranking exists to
+  fix exactly that, so it moves ahead of both hybrid search and metadata
+  filtering in the experiment order.
+- **Hybrid candidate generation adds little even at depth.** BM25 alone reaches
+  0.754 at k=50; the union of BM25 and dense reaches 0.787 — two questions. The
+  planned architecture is therefore single-stage lexical retrieval followed by
+  reranking, not two retrievers fused.
+- **13 of 61 questions (21%) are missed by every configuration at depth 50** and
+  cannot be recovered by reranking. They are carried into error analysis.
+
+Methodological note: MRR depends on retrieval depth, since a relevant chunk at
+rank 12 contributes nothing at k=5 and 1/12 at k=50. MRR is comparable only
+across runs retrieving to the same depth.
+
+Storage: pgvector columns are fixed-width, so models are separated by
+dimensionality into embeddings_384 and embeddings_768, with the model key and
+prefix scheme stored per row. Several models and the prefix ablation therefore
+coexist over the same chunks without re-indexing. Vectors are normalised to
+unit length so cosine distance, inner product and Euclidean distance rank
+identically.

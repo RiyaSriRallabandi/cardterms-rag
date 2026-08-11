@@ -3,11 +3,13 @@
 Each run stores its resolved configuration and the git commit that produced
 it, so any reported number can be reproduced. Runs are never overwritten.
 
-    uv run python scripts/run_eval.py --config configs/base.yaml \
-        --chunk-set recursive_512_ov0 --note "lexical baseline"
+    uv run python scripts/run_eval.py --chunk-set fixed_512_ov0
+    uv run python scripts/run_eval.py --mode dense --model bge-small \
+        --chunk-set fixed_512_ov0 --note "dense baseline"
 """
 
 import argparse
+import hashlib
 import json
 import subprocess
 import time
@@ -21,6 +23,7 @@ from cardterms.eval.relevance import relevant_chunks, relevant_documents
 from cardterms.eval.stats import bootstrap_ci
 from cardterms.logging import bind_run, configure_logging, log, new_run_id
 from cardterms.retrieve.bm25 import BM25Retriever
+from cardterms.retrieve.dense import DenseRetriever
 
 # Questions with no labelled answer are scored in generation, not retrieval.
 UNSCORED_CATEGORIES = ("unanswerable", "ambiguous")
@@ -47,8 +50,14 @@ def main() -> None:
     parser.add_argument("--config", default="configs/base.yaml")
     parser.add_argument("--chunk-set", help="override the chunk set to evaluate")
     parser.add_argument("--top-k", type=int, help="override retrieval depth")
+    parser.add_argument("--mode", default="bm25", choices=["bm25", "dense"])
+    parser.add_argument("--model", help="embedding model key, required for dense")
+    parser.add_argument("--no-prefix", action="store_true")
     parser.add_argument("--note", default="")
     args = parser.parse_args()
+
+    if args.mode == "dense" and not args.model:
+        raise SystemExit("--model is required in dense mode")
 
     configure_logging(json_output=False)
     config = ExperimentConfig.from_yaml(args.config)
@@ -61,10 +70,22 @@ def main() -> None:
 
     resolved = config.model_dump()
     resolved["chunk_set"] = chunk_set
-    resolved["retrieval"]["mode"] = "bm25"
+    resolved["retrieval"]["mode"] = args.mode
+
+    if args.mode == "dense":
+        resolved["embedding"]["model_name"] = args.model
+        resolved["embedding"]["query_prefix"] = "none" if args.no_prefix else "standard"
+        run_name = f"dense_{args.model}_{chunk_set}"
+        if args.no_prefix:
+            run_name += "_noprefix"
+    else:
+        run_name = f"bm25_{chunk_set}"
 
     run_id = new_run_id()
-    bind_run(run_id, chunk_set=chunk_set)
+    bind_run(run_id, chunk_set=chunk_set, mode=args.mode)
+
+    depth = max(config.evaluation.k_values + [config.retrieval.top_k])
+    per_question: list[dict] = []
 
     with get_conn() as conn:
         questions = conn.execute(
@@ -81,51 +102,57 @@ def main() -> None:
             """,
             (
                 run_id,
-                f"bm25_{chunk_set}",
+                run_name,
                 git_sha(),
                 json.dumps(resolved),
-                str(hash(json.dumps(resolved, sort_keys=True))),
+                hashlib.sha256(
+                    json.dumps(resolved, sort_keys=True).encode()
+                ).hexdigest()[:16],
                 args.note,
             ),
         )
         conn.commit()
 
-        retriever = BM25Retriever.from_chunk_set(conn, chunk_set)
+        if args.mode == "dense":
+            retriever = DenseRetriever(
+                conn, chunk_set, args.model, use_prefix=not args.no_prefix
+            )
+        else:
+            retriever = BM25Retriever.from_chunk_set(conn, chunk_set)
 
-    depth = max(config.evaluation.k_values + [config.retrieval.top_k])
-    per_question: list[dict] = []
+        # The dense retriever queries through this connection, so retrieval
+        # runs inside the same block.
+        for question in tqdm(questions, desc=run_name):
+            if question["category"] in UNSCORED_CATEGORIES:
+                continue
 
-    for question in tqdm(questions, desc=chunk_set):
-        if question["category"] in UNSCORED_CATEGORIES:
-            continue
+            started = time.perf_counter()
+            results = retriever.search(question["question"], depth)
+            latency_ms = (time.perf_counter() - started) * 1000
 
-        started = time.perf_counter()
-        results = retriever.search(question["question"], depth)
-        latency_ms = (time.perf_counter() - started) * 1000
+            chunk_ids = [chunk_id for chunk_id, _, _ in results]
+            doc_ids = [doc_id for _, doc_id, _ in results]
 
-        chunk_ids = [chunk_id for chunk_id, _, _ in results]
-        doc_ids = [doc_id for _, doc_id, _ in results]
+            scores = score_question(
+                chunk_ids,
+                doc_ids,
+                by_question.get(question["id"], {}),
+                docs_by_question.get(question["id"], set()),
+                config.evaluation.k_values,
+            )
 
-        scores = score_question(
-            chunk_ids,
-            doc_ids,
-            by_question.get(question["id"], {}),
-            docs_by_question.get(question["id"], set()),
-            config.evaluation.k_values,
-        )
-
-        per_question.append(
-            {
-                "question_id": question["id"],
-                "category": question["category"],
-                "scores": scores,
-                "retrieved": [
-                    {"chunk_id": c, "doc_id": d, "score": s, "rank": i}
-                    for i, (c, d, s) in enumerate(results, start=1)
-                ],
-                "latency_ms": latency_ms,
-            }
-        )
+            per_question.append(
+                {
+                    "question_id": question["id"],
+                    "category": question["category"],
+                    "scores": scores,
+                    "retrieved": [
+                        {"chunk_id": c, "doc_id": d, "score": s, "rank": i}
+                        for i, (c, d, s) in enumerate(results, start=1)
+                    ],
+                    "latency_ms": latency_ms,
+                }
+            )
 
     metric_names = sorted(per_question[0]["scores"]) if per_question else []
     aggregate = {}
@@ -172,7 +199,7 @@ def main() -> None:
 
     log.info("run_complete", run_id=run_id, questions=len(per_question))
 
-    print(f"\n{'=' * 66}\n{chunk_set}   run {run_id[:8]}\n{'=' * 66}")
+    print(f"\n{'=' * 66}\n{run_name}   run {run_id[:8]}\n{'=' * 66}")
     print(f"{len(per_question)} scored questions\n")
     for name in ("hit_rate@5", "recall@5", "mrr", "doc_hit_rate@5", "ndcg@10"):
         if name in aggregate:
