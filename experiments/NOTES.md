@@ -623,3 +623,87 @@ Known limitations:
 - Four of five ambiguous questions were answered by silently choosing a card.
 - Citation validity cannot be recomputed from stored results, since the passage
   list is not persisted; it is only available from a live run.
+
+
+## Task 11 — Generation experiments
+
+Two questions: are the remaining refusal failures caused by model capacity or by
+the prompt, and can a small local model serve this task at all.
+
+Provider comparison, identical retrieval and prompt, 76 questions:
+
+| measure                 | 3B local (Ollama) | 8B hosted (Groq) |
+|-------------------------|-------------------|------------------|
+| correct abstention      | 10/15             | 9/15   |
+| false abstention        | 5/61              | 6/61   |
+| invalid citations       | 3                 | 2      |
+| expected figure present | 39/43 (0.907)     | 39/42 (0.929) |
+
+Prompt revisions, measured on the 26 questions where refusal is at stake:
+
+| measure          | v1   | v2   | v3 + gate |
+|------------------|------|------|-----------|
+| unanswerable     | 9/10 | 9/10 | 8/10 |
+| ambiguous        | 1/5  | 0/5  | 5/5  |
+| false abstention | 4/11 | 2/11 | 3/11 |
+| uncited claims   | 22   | 22   | 5    |
+
+Final configuration, 76 questions: correct abstention 13/15, false abstention
+4/61, grounded accuracy 40/44 (0.909), 2 answers with invalid citations.
+
+Findings:
+
+- **Model capacity was not the constraint.** Nearly three times the parameters
+  moved every measure by at most one question. Once retrieval supplies the
+  right passages this task is extraction rather than reasoning, and a 3B model
+  running locally is sufficient — which is the difference between a system that
+  costs nothing to operate and one that does not.
+- **The refusal rule was wrong in both directions at once.** The v1 condition
+  fired when a question named *two* cards and failed when it named *none*,
+  because the model read the second clause and ignored the first. Comparisons
+  were refused; ambiguous questions were answered by silently picking whichever
+  card had been retrieved.
+- **Rewriting the rule as an explicit procedure made it worse.** v2 instructed
+  the model to count the cards named in the question and judge that from the
+  question alone. It complied and got the count wrong, taking card names out of
+  the passages — "Since the question names only one card, I will answer for
+  that card" on a question naming none. Ambiguous fell to 0/5, and narrating
+  the procedure broke the two-sentence limit.
+- **Entity counting belongs in code, not in the prompt.** The entity detector
+  built for retrieval already answers "does this question name a card". Moving
+  the decision out of the generator took ambiguous questions from 1/5 to 5/5
+  deterministically, with no model call at all. Verified before adoption: all 5
+  ambiguous questions name no recognisable card, against 0 of 11 comparisons,
+  0 of 21 entity-confusable and 0 of 9 table lookups.
+- **A prompt that says less performs better once the hard decision is removed.**
+  v3 dropped the ambiguity rule entirely, kept v1's brevity, added a comparison
+  carve-out and an instruction not to narrate. Uncited claims on the refusal
+  subset fell from 22 to 5.
+
+Free-tier constraints, worth recording as engineering findings:
+
+- The 70B model allows 100,000 tokens per day. One 76-question run needs about
+  250,000, so a complete evaluation is impossible within a day at that size —
+  the comparison arm became the 8B model for this reason.
+- Both hosted models throttle by tokens per minute (12,000 and 6,000). A loop
+  issuing requests as fast as they complete fails on the first question.
+  Client-side pacing against a rolling window was required.
+- Rate-limit errors were indistinguishable until the response body was
+  surfaced: a per-minute limit and a per-day limit fail identically, nine
+  minutes apart.
+
+Known limitations:
+
+- `unans_amex_platinum_apr` answers "12.74% 21.74% [1]" — with a citation. The
+  model is not recalling Amex's rate from training; it is reading another
+  card's APR out of a retrieved passage. The failure is not ungrounded
+  generation but unverified card identity, which the instruction "never use
+  outside knowledge" does not address.
+- `unans_alliant_billing_rights` answers generically about billing rights from
+  a different issuer's filing.
+- Three comparison questions are still refused, all with incomplete evidence.
+- One single-fact question names no card the detector recognises and is
+  therefore asked for clarification. A measured cost of the gate: one question
+  lost against four gained.
+- Abstention kind remains unreliable — the model picks the right decision and
+  the wrong label. Abstention is treated as binary throughout.

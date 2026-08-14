@@ -6,8 +6,14 @@ from pathlib import Path
 
 from cardterms.eval.llm import complete
 from cardterms.generate.context import Passage, build_passages, render
+from cardterms.retrieve.entities import detect
 
 PROMPT_DIR = Path("prompts")
+
+# The canonical tokens, as written in the prompt and emitted when the pipeline
+# refuses without consulting the model.
+INSUFFICIENT = "INSUFFICIENT_CONTEXT"
+NEEDS_CLARIFICATION = "NEEDS_CLARIFICATION"
 
 # Models reproduce these tokens loosely — "INSUFFICIENT CONTEXT", lowercase, or
 # wrapped in punctuation. Matching the literal string silently misclassifies a
@@ -39,7 +45,22 @@ def generate(
     provider: str = "ollama",
     model: str | None = None,
     max_context_tokens: int = 3000,
+    entity_index: dict[str, frozenset[int]] | None = None,
 ) -> Answer:
+    # Deciding whether a question names a card is entity recognition, and a 3B
+    # model does it badly: asked to count cards in the question, it reads a name
+    # out of the passages instead and answers for whichever card was retrieved.
+    # The corpus already provides a reliable answer, so the decision is made
+    # here rather than delegated to the generator.
+    if entity_index is not None and not detect(question, entity_index):
+        return Answer(
+            text=NEEDS_CLARIFICATION,
+            abstained=True,
+            abstention_kind="needs_clarification",
+            cited=[],
+            passages=[],
+        )
+
     passages = build_passages(conn, retrieved, max_context_tokens)
     prompt = load_prompt(prompt_version).format(
         passages=render(passages), question=question

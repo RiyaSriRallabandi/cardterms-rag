@@ -47,11 +47,15 @@ def main() -> None:
         need = gold.get(row["id"], set())
         union = set().union(*(e.doc_ids for e in entities)) if entities else set()
 
-        bucket = multi_by_category.setdefault(row["category"], [0, 0])
+        bucket = multi_by_category.setdefault(row["category"], [0, 0, 0])
         bucket[1] += 1
         if len(entities) >= 2:
             multi += 1
             bucket[0] += 1
+        if not entities:
+            # Naming no recognisable card is the signature of an ambiguous
+            # question, and is decidable here rather than by the generator.
+            bucket[2] += 1
         if len(need) > 1:
             needs_multi += 1
             if need <= union:
@@ -71,10 +75,12 @@ def main() -> None:
         else:
             print("       (no card recognised)")
 
-    print("\n  questions resolving to two or more entities, by category")
+    print("\n  by category: two-or-more entities / no entity at all")
     for category in sorted(multi_by_category):
-        hit, total = multi_by_category[category]
-        print(f"    {category:20s} {hit:3d}/{total:3d}")
+        hit, total, none = multi_by_category[category]
+        print(
+            f"    {category:20s} multi {hit:3d}/{total:3d}    none {none:3d}/{total:3d}"
+        )
 
     print(
         f"\n  {multi} questions name two or more cards\n"

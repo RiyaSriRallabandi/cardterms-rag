@@ -50,6 +50,26 @@ def chunk_set_name(config: ExperimentConfig) -> str:
     )
 
 
+def stratified(questions: list, limit: int) -> list:
+    """Take `limit` questions, rotating across categories.
+
+    A smoke test that samples in question order would draw entirely from one or
+    two categories and miss the refusal questions, which are the ones a
+    generation change is most likely to break.
+    """
+    buckets: dict[str, list] = {}
+    for question in questions:
+        buckets.setdefault(question["category"], []).append(question)
+
+    picked = []
+    while len(picked) < limit and any(buckets.values()):
+        for category in sorted(buckets):
+            if not buckets[category] or len(picked) >= limit:
+                continue
+            picked.append(buckets[category].pop(0))
+    return picked
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="configs/base.yaml")
@@ -81,6 +101,20 @@ def main() -> None:
     parser.add_argument("--provider", default="ollama", choices=["ollama", "groq"])
     parser.add_argument("--gen-model", help="override the generator model")
     parser.add_argument("--prompt", default="answer_v1")
+    parser.add_argument(
+        "--clarify-gate",
+        action="store_true",
+        help="ask which card when the question names none, without generating",
+    )
+    parser.add_argument(
+        "--only",
+        help="comma-separated categories, e.g. ambiguous,unanswerable",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        help="evaluate a stratified subset; marks the run as a smoke test",
+    )
     args = parser.parse_args()
 
     if args.mode == "dense" and not args.model:
@@ -125,11 +159,18 @@ def main() -> None:
         resolved["retrieval"]["entity_select"] = True
         run_name += "_ent"
 
+    # A partial run must never be mistaken for a full one in the runs table.
+    if args.only or args.limit:
+        run_name += "_smoke"
+
     if args.generate:
         resolved["generation"]["provider"] = args.provider
         resolved["generation"]["model_name"] = args.gen_model or "default"
         resolved["generation"]["prompt_version"] = args.prompt
+        resolved["generation"]["clarify_gate"] = args.clarify_gate
         run_name += f"_gen-{args.provider}"
+        if args.clarify_gate:
+            run_name += "-gate"
 
     run_id = new_run_id()
     bind_run(run_id, chunk_set=chunk_set, mode=args.mode)
@@ -142,6 +183,14 @@ def main() -> None:
             "SELECT id, question_uid, question, category, reference_answer "
             "FROM eval_questions ORDER BY question_uid"
         ).fetchall()
+        if args.only:
+            wanted = {name.strip() for name in args.only.split(",")}
+            questions = [q for q in questions if q["category"] in wanted]
+        if args.limit:
+            questions = stratified(questions, args.limit)
+        if not questions:
+            raise SystemExit("no questions selected")
+
         by_question = relevant_chunks(conn, chunk_set)
         docs_by_question = relevant_documents(conn)
 
@@ -176,7 +225,9 @@ def main() -> None:
             else None
         )
 
-        entity_index = build_index(conn) if args.entity_select else {}
+        entity_index = (
+            build_index(conn) if (args.entity_select or args.clarify_gate) else {}
+        )
 
         # The dense retriever queries through this connection, so retrieval
         # runs inside the same block.
@@ -223,6 +274,7 @@ def main() -> None:
                     provider=args.provider,
                     model=args.gen_model,
                     max_context_tokens=config.generation.max_context_tokens,
+                    entity_index=entity_index if args.clarify_gate else None,
                 )
                 checks = validate(answer, question["reference_answer"])
 
