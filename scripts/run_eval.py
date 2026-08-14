@@ -115,6 +115,10 @@ def main() -> None:
         type=int,
         help="evaluate a stratified subset; marks the run as a smoke test",
     )
+    parser.add_argument(
+        "--uids",
+        help="comma-separated question_uids, for retesting specific failures",
+    )
     args = parser.parse_args()
 
     if args.mode == "dense" and not args.model:
@@ -160,7 +164,7 @@ def main() -> None:
         run_name += "_ent"
 
     # A partial run must never be mistaken for a full one in the runs table.
-    if args.only or args.limit:
+    if args.only or args.limit or args.uids:
         run_name += "_smoke"
 
     if args.generate:
@@ -183,6 +187,12 @@ def main() -> None:
             "SELECT id, question_uid, question, category, reference_answer "
             "FROM eval_questions ORDER BY question_uid"
         ).fetchall()
+        if args.uids:
+            wanted_uids = {uid.strip() for uid in args.uids.split(",")}
+            questions = [q for q in questions if q["question_uid"] in wanted_uids]
+            missing = wanted_uids - {q["question_uid"] for q in questions}
+            if missing:
+                raise SystemExit(f"unknown question_uids: {sorted(missing)}")
         if args.only:
             wanted = {name.strip() for name in args.only.split(",")}
             questions = [q for q in questions if q["category"] in wanted]

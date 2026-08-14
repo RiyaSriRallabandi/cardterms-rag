@@ -754,3 +754,115 @@ clause asserting more than the quote supported. The audit is committed as
 
 Grading and the judge run both used the pre-correction wording; neither
 correction removes a fact that would change a verdict.
+
+
+## Task 12 — Error analysis and generator selection
+
+Every question classified by the component that would have to change to fix it.
+Retrieval outcome and answer verdict are independent facts, and their
+combination identifies the cause: a wrong answer with complete evidence in the
+context is a generation failure; the same answer with nothing relevant
+retrieved is a retrieval failure. An aggregate score says how much is broken and
+never says what to fix.
+
+Final configuration, 76 questions, llama-3.1-8b-instant:
+
+| outcome                                        | n  | share |
+|------------------------------------------------|----|-------|
+| answered correctly                             | 43 | 56.6% |
+| correctly refused                               | 13 | 17.1% |
+| partial answer, evidence incomplete            |  4 |  5.3% |
+| partial answer despite complete evidence       |  0 |  0.0% |
+| refused, evidence incomplete — defensible      |  2 |  2.6% |
+| refused despite complete evidence              |  1 |  1.3% |
+| wrong: nothing relevant at depth 50            |  0 |  0.0% |
+| wrong: passage in the pool, not in the top 5   |  3 |  3.9% |
+| wrong: answered on incomplete evidence         |  2 |  2.6% |
+| wrong: evidence complete — grounding failure   |  6 |  7.9% |
+| answered what the corpus cannot answer         |  2 |  2.6% |
+
+**56 correct (73.7%), 11 retrieval-caused, 9 generation-caused.**
+
+Findings:
+
+- **The bottleneck moved twice.** Task 6 found 26 failures, 20 of them
+  right-document-wrong-passage: retrieval dominated. After reranking, metadata
+  augmentation and entity-aware selection, the local 3B model produced 10
+  retrieval-caused failures against 18 generation-caused. Replacing the
+  generator rebalanced it to 11 and 9. Each stage of the project was
+  bottlenecked somewhere different, and the aggregate score never revealed
+  where.
+- **Prompt engineering was the least effective lever tried.** Three revisions
+  were measured and two were rejected. v2 rewrote the refusal rules as an
+  explicit procedure and made ambiguous questions worse — instructed to count
+  the cards named in a question, the model narrated counting and miscounted,
+  reading names out of the retrieved passages instead. v4 added rules for
+  negative answers and an instruction to begin yes/no answers with Yes or No;
+  it corrected one of eleven failures and degraded several, turning "Yes, there
+  is no annual fee" into a bare "Yes." and producing incoherent output such as
+  "Yes, No. According to...". Instructing a small model to state a decision
+  produces the decision token as a reflex rather than as a conclusion.
+- **The two levers that worked were code and capacity.** Moving the ambiguity
+  decision out of the prompt and into the entity detector took those questions
+  from 1/5 to 5/5 deterministically. Replacing the 3B generator corrected 8 of
+  11 grounding failures. Neither is prompt engineering.
+- **Capacity was the constraint, contrary to the Task 11 conclusion.** That
+  conclusion compared 3B and 8B on refusal behaviour rather than on answer
+  correctness, and generalised from the wrong measurement. Re-tested on the
+  eleven grounding failures under an identical prompt and retrieval
+  configuration:
+
+| generator             | grounding failures corrected |
+|-----------------------|------------------------------|
+| llama3.2:3b, local    | 0 / 11 |
+| llama-3.1-8b, hosted  | 8 / 11 |
+| llama-3.3-70b, hosted | 9 / 11, 1 partial |
+
+- **The 8B was chosen over the 70B because it can be measured.** They differ by
+  one question, which is noise at n=11. A 76-question evaluation needs roughly
+  250,000 tokens; the 70B free tier allows 100,000 per day and hard-fails, while
+  the 8B completes a full run. A model that cannot be evaluated cannot be
+  reported.
+- **Five of the eleven 3B grounding failures answered "Yes" where the answer was
+  "No"**, one of them stating "Yes, there is no annual fee" — correct content,
+  inverted polarity. Five read the wrong row of the right fee table, rendering
+  "either $10 or 3%" as "$10.00 + 3%". Both classes largely disappear at 8B.
+
+Deployment trade-off, both at zero cost:
+
+| | local 3B | hosted 8B |
+|---|---|---|
+| end-to-end correct | 48/76 (63.2%) | 56/76 (73.7%) |
+| grounding failures | 11 | 6 |
+| judged correct, of answered | 0.593 | 0.717 |
+| latency | ~40 s/question | ~3 s/question |
+| throughput ceiling | unlimited | ~2 questions/minute (6,000 TPM) |
+| network required | no | yes |
+| passages sent to a third party | no | yes |
+
+The hosted model is the default; the local model remains supported as an
+offline, private fallback at a measured 10-point accuracy cost.
+
+Caveats:
+
+- The judge was calibrated (κ = 0.871) against hand labels on the 3B's answers
+  and applied unchanged to the 8B's. The grading task is identical but the
+  answer distribution is not, so 0.717 carries slightly more uncertainty than
+  the calibration figure implies.
+- The judge is stricter than the human grader on borderline completeness, so the
+  correct counts are mild undercounts.
+- `answer_v2` and `answer_v4` are retained in the repository as rejected
+  ablations.
+
+Remaining failures, in the order they would be addressed:
+
+- 6 grounding failures with complete evidence — the residue after the model
+  change, mostly wrong-row selection within a fee table. Structured table
+  extraction rather than Markdown in the context is the obvious next step, and
+  is a rework of the ingestion layer.
+- 4 partial and 2 wrong answers on incomplete evidence, all multi-document
+  comparisons — upstream of generation, and addressed by better coverage rather
+  than a better generator.
+- 3 questions whose passage sits in the 50-candidate pool but not in the top 5.
+- 2 confabulations on cards absent from the corpus, and 1 question wrongly
+  asked for clarification by the entity gate.

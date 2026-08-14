@@ -1,0 +1,93 @@
+
+==========================================================================
+error analysis: bm25_fixed_512_ov0_rr-bge-50-aug_ent_gen-ollama-gate
+==========================================================================
+76 questions
+
+   35  46.1%  answered correctly
+   13  17.1%  correctly refused (no answer in corpus)
+    2   2.6%  partial answer, evidence incomplete
+    4   5.3%  partial answer despite complete evidence
+    3   3.9%  refused, evidence incomplete — defensible
+    1   1.3%  refused despite complete evidence
+    1   1.3%  wrong: no relevant passage exists at depth 50
+    3   3.9%  wrong: passage in the pool, not in the top 5
+    1   1.3%  wrong: answered on incomplete evidence
+   11  14.5%  wrong: evidence was complete — grounding failure
+    2   2.6%  answered a question the corpus cannot answer
+
+   48 correct,  10 retrieval-caused,  18 generation-caused
+
+  partial answer, evidence incomplete
+    jcpenney_mastercard_promo_interest     single_fact        ev 0.00
+      If you don't pay off a promotional balance on the JCPenney Mastercard before the promo ends, int
+    nissan_signature_purchase_apr          single_fact        ev 0.00
+      The Purchase APR is the prime rate plus 13.99% for Account Type 1, or 19.99% for Account Type 2 
+
+  partial answer despite complete evidence
+    target_mastercard_returned_payment     entity_confusable  ev 1.00
+      $30.00 [3]
+    comenity_smilecare_late_fee            single_fact        ev 1.00
+      $40.00 if you were not charged a Late Fee during the prior six billing periods. Otherwise, it is
+    marine_late_payment_fee                single_fact        ev 1.00
+      $27+ on the 1st occurrence or $35+ for each additional occurrence if the payment is not made by 
+    elga_business_apr                      table_lookup       ev 1.00
+      [5] The Annual Percentage Rate (APR) for Purchases, Balance Transfers, and Cash Advances is 14.7
+
+  refused, evidence incomplete — defensible
+    cmp_apr_bealls_vs_jcpenney_mc          comparison         ev 0.50
+      INSUFFICIENT CONTEXT
+    cmp_apr_elga_vs_wellsville             comparison         ev 0.50
+      INSUFFICIENT CONTEXT.
+    cmp_secured_apr_missionlane_vs_marine  comparison         ev 0.50
+      INSUFFICIENT CONTEXT
+
+  refused despite complete evidence
+    1st_united_balance_transfer_fee        single_fact        ev 1.00
+      NEEDS_CLARIFICATION
+
+  wrong: no relevant passage exists at depth 50
+    southern_bank_expedited_card           single_fact        ev 0.00
+      $10 for expedited or overseas delivery of the replacement Card.
+
+  wrong: passage in the pool, not in the top 5
+    cmp_late_fee_commerce_vs_marine        comparison         ev 0.00
+      Marine Federal Credit Union's. $27 [1]
+    cmp_saks_variants_apr                  comparison         ev 0.00
+      For the Saks World Mastercard, the minimum payment is the new balance if it's less than $30.00 (
+    mission_lane_webbank_issuer            entity_confusable  ev 0.00
+      Transportation Alliance Bank, Inc. dba TAB Bank [1] and WebBank [2].
+
+  wrong: answered on incomplete evidence
+    cmp_secured_annual_fee                 comparison         ev 0.50
+      Yes, the Mission Lane Secured Visa charges an Annual Fee of $29 [1]. The Marine Federal Credit B
+
+  wrong: evidence was complete — grounding failure
+    cmp_late_fee_smilecare_vs_commerce     comparison         ev 1.00
+      $29 for the My Smile Care account and $29 for Commerce Bank.
+    cmp_onpoint_platinum_variants          comparison         ev 1.00
+      Yes, 14.25% - 18.75%. [3]
+    onpoint_platinum_rewards_bt_apr        entity_confusable  ev 1.00
+      16.25% - 20.75%. [5]
+    opensky_plus_annual_fee                entity_confusable  ev 1.00
+      Yes, $0 for the first year and then $59 annually. [4]
+    smart_option_visa_margin               entity_confusable  ev 1.00
+      6.74%
+    apple_card_coowner_removal             single_fact        ev 1.00
+      Yes, you can request to close your Co-Owned Account and then request a new individual account, s
+    synchrony_preferred_min_payment_cap    single_fact        ev 1.00
+      Yes, according to [2], your total minimum payment will never be more than your new balance, but 
+    synchrony_preferred_paper_statement    single_fact        ev 1.00
+      To avoid the $1.99 monthly Paper Statement Fee, log in to our servicing site and select "Electro
+    target_mastercard_annual_fee           single_fact        ev 1.00
+      Yes, there is no annual fee. [1]
+    iberia_foreign_transaction             table_lookup       ev 1.00
+      Yes, $5 or 5% of the amount of each transfer, whichever is greater. [2]
+    target_mastercard_cash_advance         table_lookup       ev 1.00
+      $10.00 + 3% of the amount of each new Cash Advance.
+
+  answered a question the corpus cannot answer
+    unans_alliant_billing_rights           unanswerable       ev 0.00
+      Your billing rights are provided in the Billing Rights section of the Alliant Cashback Visa Sign
+    unans_amex_platinum_apr                unanswerable       ev 0.00
+      12.74% 21.74% [1]
