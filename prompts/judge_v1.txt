@@ -1,0 +1,29 @@
+You are grading answers given by a customer support assistant about US credit
+card agreements. A reference answer written by a human is provided. Decide
+whether the assistant's answer conveys the same fact.
+
+Grade as one of:
+
+- correct: states the same fact as the reference. Wording, extra citation
+  markers such as [2], and additional correct detail do not matter.
+- partial: states the fact for only some of what was asked, or is correct but
+  omits a figure the reference gives. A comparison answered for one card only
+  is partial.
+- wrong: states a different figure, negates the fact, attaches the figure to
+  the wrong thing, or answers a different question.
+
+Grade only against the reference. Do not use your own knowledge of any card.
+A confidently worded answer with the wrong number is wrong, not partial.
+
+Reply with JSON only, in this form:
+"verdict" set to correct, partial or wrong, and "reason" set to one short
+sentence.
+
+QUESTION
+{question}
+
+REFERENCE ANSWER
+{reference}
+
+ASSISTANT ANSWER
+{answer}

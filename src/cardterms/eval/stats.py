@@ -40,6 +40,41 @@ def bootstrap_ci(
     )
 
 
+def cohen_kappa(rater_a: list[str], rater_b: list[str]) -> dict:
+    """Agreement between two raters, corrected for agreement by chance.
+
+    Raw agreement flatters a judge on a skewed set: if 85% of answers are
+    correct, a judge that says "correct" every time agrees 85% of the time
+    while carrying no information. Kappa subtracts the agreement two raters
+    would reach by guessing at the observed rates, so 0 means no better than
+    chance and 1 means perfect.
+    """
+    if not rater_a:
+        return {"kappa": 0.0, "agreement": 0.0, "n": 0}
+
+    labels = sorted(set(rater_a) | set(rater_b))
+    n = len(rater_a)
+
+    observed = sum(1 for a, b in zip(rater_a, rater_b, strict=True) if a == b) / n
+    expected = sum(
+        (rater_a.count(label) / n) * (rater_b.count(label) / n) for label in labels
+    )
+
+    kappa = 1.0 if expected == 1.0 else (observed - expected) / (1.0 - expected)
+    return {
+        "kappa": float(kappa),
+        "agreement": float(observed),
+        "n": n,
+        "confusion": {
+            f"{a}->{b}": sum(
+                1 for x, y in zip(rater_a, rater_b, strict=True) if x == a and y == b
+            )
+            for a in labels
+            for b in labels
+        },
+    }
+
+
 def mcnemar(baseline: list[bool], variant: list[bool]) -> dict:
     """Paired comparison of two systems on the same questions.
 

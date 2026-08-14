@@ -707,3 +707,50 @@ Known limitations:
   lost against four gained.
 - Abstention kind remains unreliable — the model picks the right decision and
   the wrong label. Abstention is treated as binary throughout.
+
+
+LLM-as-judge, calibrated:
+
+The mechanical check asks only whether the reference figure appears somewhere
+in the answer, so "the annual fee is $59", "the annual fee is not $59" and
+"$59 is the cash advance fee" all score as correct. A judge grades each answer
+against the reference as correct, partial or wrong.
+
+A judge is not evidence until it agrees with a human. 30 answers were graded by
+hand, stratified across categories, on a sheet with the judge's verdicts hidden.
+
+| measure                          | value |
+|----------------------------------|-------|
+| raw agreement                    | 0.933 |
+| Cohen's kappa                    | 0.871 |
+| judge over 59 answers: correct   | 0.593 |
+| judge over 59 answers: partial   | 0.102 |
+| judge over 59 answers: wrong     | 0.305 |
+| mechanical figure check          | 0.909 |
+
+- **The mechanical check overstated grounded accuracy by roughly 30 points.**
+  Human grading of 30 answers gives 0.633 correct; the calibrated judge gives
+  0.593 over all 59. Figure presence gives 0.909. Every number reported before
+  this section that relies on figure presence is an upper bound.
+- **Both disagreements are adjacent categories.** The judge called one correct
+  answer partial and one wrong answer partial; it never confused correct with
+  wrong. Its errors are calibration of the middle category, not of quality.
+- **An 8B judge was sufficient.** Grading against a written reference is an
+  easier task than answering, and does not require a larger model than the one
+  being graded.
+- Kappa rather than raw agreement: with 63% of answers correct, a judge
+  answering "correct" every time would score 0.63 raw agreement while carrying
+  no information.
+
+Golden set audit, prompted by grading:
+
+Task 5 machine-verified every labelled quote but nothing verified the reference
+answers, which are prose written from those quotes. All 76 were audited: 51
+containing a figure or phone number were checked automatically against their
+quotes, 10 prose references were read by hand, and 15 refusal references have no
+labels by design. Two errors were found and corrected, both the same shape — a
+clause asserting more than the quote supported. The audit is committed as
+`scripts/audit_references.py`.
+
+Grading and the judge run both used the pre-correction wording; neither
+correction removes a fact that would change a verdict.
