@@ -514,3 +514,112 @@ the candidate pool without being promoted into the top five, and two are not
 retrieved at depth 50 at all. Both groups are carried into error analysis.
 Larger pools were tested and rejected, so further gains would require a
 stronger reranker rather than better candidates.
+
+
+## Task 10 — Generation
+
+A grounded answering layer over the frozen retrieval configuration: passages
+rendered with citation numbers, a prompt fixing the grounding contract, two
+refusal tokens for two distinct situations, and mechanical post-checks. The
+generator is a local 3B model over Ollama, so the whole loop costs nothing.
+
+Generation over all 76 questions, corrected scoring:
+
+| measure                          | value  |
+|----------------------------------|--------|
+| answered                         | 53     |
+| expected figure present          | 37/40 (0.925) |
+| correct abstention, unanswerable | 7/10   |
+| correct abstention, ambiguous    | 1/5    |
+| false abstention                 | 8/61   |
+| confabulations                   | 7      |
+| uncited claims                   | 21 sentences |
+
+Decisions:
+
+- Validation is deliberately mechanical: whether cited passage numbers exist,
+  and whether the figure the reference answer turns on appears in the text.
+  Whether an answer is *good* needs a judge and is deferred; whether it cites
+  passages that were never supplied can be settled by code, and in a regulated
+  domain that is the failure that matters.
+- Two refusal tokens rather than one. Missing information and an
+  under-specified question are different situations for a support agent: one
+  needs escalation, the other needs a follow-up question.
+- All 76 questions are generated for, while retrieval metrics continue to
+  average over the 61 labelled ones. The 15 unlabelled questions are the point
+  of generation evaluation and would otherwise depress every retrieval
+  aggregate by a fifth.
+
+Findings:
+
+- **Refusal detection by literal string match misread 12 of 76 answers.** The
+  prompt specifies `INSUFFICIENT_CONTEXT`; the model writes `INSUFFICIENT
+  CONTEXT`. Correcting the match moved correct abstention from 2/15 to 8/15,
+  false abstention from 2/61 to 8/61, and grounded accuracy from 37/46 to
+  37/40 — six answers had been counted as wrong-figure when the model had
+  declined to give one. Both numerator and denominator were wrong, in opposite
+  directions. Matching now tolerates spacing, case and punctuation.
+- **The model swaps the two refusal tokens.** It refused an unanswerable
+  question with `NEEDS_CLARIFICATION` and an ambiguous one with
+  `INSUFFICIENT_CONTEXT`. A 3B model can determine *that* it should refuse but
+  not *why*, so abstention is treated as binary and the kind is not reported.
+- **Generation exposed a retrieval defect that retrieval metrics could not
+  see.** Six of the eight false abstentions had incomplete evidence: the model
+  was shown one side of a two-sided comparison and correctly declined. Five
+  further questions had incomplete evidence and answered anyway, producing
+  comparisons against a card never supplied — scored as successes throughout.
+- **hit_rate@k credits a question as soon as one relevant chunk arrives**, so a
+  comparison scores 1.0 while half its evidence is missing. Added `evidence@k`:
+  the fraction of a question's documents contributing a labelled passage. It
+  equals hit rate for single-document questions and diverges sharply for
+  comparisons — 0.636 against 0.409 at k=5. The headline 0.787 was carrying
+  that inflation.
+- **Blind per-document caps were measured and rejected.** Limiting any document
+  to 3, 2 or 1 of the five slots moved evidence between categories without
+  creating any: overall 0.738 → 0.746 → 0.721 → 0.656, with comparisons gaining
+  0.136 and table lookups losing 0.111. The missing passages sit at ranks 12 to
+  29, and a cap can only promote what sits at rank 6.
+- **Entity-aware selection works because it is conditional.** Cards named in a
+  question are detected against product and issuer names already in the corpus;
+  when two or more are named, slots are reserved for each, rotating across
+  cards and preferring an unrepresented document within each. Questions naming
+  one card take an early exit and are returned exactly as the reranker ordered
+  them.
+
+| configuration                    | hit@5 | evidence@5 | comparison ev. |
+|----------------------------------|-------|------------|----------------|
+| reranked baseline                | 0.787 | 0.738      | 0.409 |
+| + per-document cap 3             | 0.787 | 0.746      | 0.545 |
+| + entity-aware selection (final) | 0.820 | 0.775      | 0.614 |
+
+Entity-confusable, single-fact and table-lookup categories are identical to
+baseline to three decimals; the entire gain comes from comparisons.
+Wilcoxon on evidence@5: 5 improved, 1 worsened, p = 0.0348. McNemar on hit@5:
+2 fixed, 0 broken, p = 0.5000 — the improvement is nearly invisible to the
+metric the project began with, which is the argument for having added a second.
+
+Vocabulary construction:
+
+- Generic words appear inside product names — "balance", "statement", "points"
+  — and would each reserve a slot for an unrelated document. They are removed
+  by body-text document frequency rather than a hand-written stoplist: a brand
+  is rare in the corpus body, generic vocabulary is not.
+- The threshold was set by inspecting detection quality against these same 76
+  questions. **The p-value above is therefore optimistic**; a clean estimate
+  needs held-out questions. At 0.2 the filter removed genuine brands and cost
+  four comparison questions their second entity; 0.5 retains 9 of 11
+  comparisons while dropping single-fact interference to 0 of 20.
+
+Known limitations:
+
+- The one apparent regression, `cmp_apr_bealls_vs_jcpenney_mc` (0.75 → 0.50),
+  is a scoring artifact. Its gold set contains three near-identical Bealls
+  filings plus JCPenney; the baseline retrieved three copies of one side and
+  scored higher, the balanced result holds both sides and scores lower.
+  Equivalent filings should count as one group — the groups are already
+  enumerated from Task 5.
+- Seven confabulations remain, three on cards absent from the corpus. Whether
+  these are the 3B model's limits or the prompt's is the Task 11 comparison.
+- Four of five ambiguous questions were answered by silently choosing a card.
+- Citation validity cannot be recomputed from stored results, since the passage
+  list is not persisted; it is only available from a live run.

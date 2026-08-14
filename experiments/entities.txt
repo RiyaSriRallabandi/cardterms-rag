@@ -1,0 +1,57 @@
+
+vocabulary: 314 distinctive tokens
+
+  cmp_annual_fee_iberia_vs_suncountry    comparison         gold 2/2
+    Is the annual fee higher on the Iberia Visa Signature or the Sun Country Visa Signature?
+     * country                        1 docs   1 gold
+     * iberia                         1 docs   1 gold
+  cmp_apr_bealls_vs_jcpenney_mc          comparison         gold 4/4
+    Which charges more interest on purchases, the Bealls Outlet card or the JCPenney Mastercard?
+     * jcpenney                       2 docs   1 gold
+     * outlet                         2 docs   2 gold
+     * bealls                         3 docs   3 gold
+  cmp_apr_elga_vs_wellsville             comparison         gold 2/2
+    Which is cheaper to carry a balance on, the ELGA Visa Business card or the TD Bank Wellsville ca
+       balance                        1 docs   0 gold
+     * business                       1 docs   1 gold
+     * wellsville                     1 docs   1 gold
+     * elga                           5 docs   1 gold
+  cmp_late_fee_commerce_vs_marine        comparison         gold 2/2
+    Whose first late payment fee is higher, Commerce Bank's or Marine Federal's?
+     * marine                         5 docs   1 gold
+     * commerce                       8 docs   1 gold
+  cmp_late_fee_smilecare_vs_commerce     comparison         gold 2/2
+    Which is higher, the late payment fee on the My Smile Care account or Commerce Bank's first late
+     * care+smile                     1 docs   1 gold
+     * commerce                       8 docs   1 gold
+  cmp_min_interest_jcpenney_vs_burkes    comparison         gold 3/4
+    Which has the lower minimum interest charge, the JCPenney credit card or the Burkes Outlet card?
+     * burkes                         1 docs   1 gold
+     * jcpenney                       2 docs   1 gold
+     * outlet                         2 docs   2 gold
+  cmp_min_interest_phillips_vs_jcpenney  comparison         gold 2/2
+    Do the Phillips 66 commercial card and the JCPenney credit card have the same minimum interest c
+     * phillips                       1 docs   1 gold
+     * jcpenney                       2 docs   1 gold
+  cmp_onpoint_platinum_variants          comparison         gold 1/1
+    Does adding rewards to the OnPoint Platinum Visa raise the balance transfer APR?
+     * balance+transfer               1 docs   1 gold
+     * onpoint                        5 docs   1 gold
+     * platinum                      10 docs   1 gold
+  cmp_saks_variants_apr                  comparison         gold 2/2
+    Is the Saks World Mastercard or the plain Saks Credit Card cheaper for carrying a balance?
+       balance                        1 docs   0 gold
+     * saks                           2 docs   2 gold
+  cmp_secured_annual_fee                 comparison         gold 2/2
+    Do the Mission Lane Secured Visa and the Marine Federal Credit Builder both charge an annual fee
+       builder                        1 docs   0 gold
+     * lane+mission                   4 docs   1 gold
+     * marine                         5 docs   1 gold
+  cmp_secured_apr_missionlane_vs_marine  comparison         gold 2/2
+    Between the Mission Lane Secured Visa and the Marine Federal Visa Credit Builder Secured, which 
+       builder                        1 docs   0 gold
+     * lane+mission                   4 docs   1 gold
+     * marine                         5 docs   1 gold
+
+  11 questions name two or more cards
+  9/10 multi-document questions have every gold document inside a detected entity

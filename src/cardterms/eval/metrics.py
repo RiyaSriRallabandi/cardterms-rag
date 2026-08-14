@@ -81,6 +81,32 @@ def document_hit_rate(
     return float(any(doc_id in relevant_docs for doc_id in retrieved_docs[:k]))
 
 
+def evidence_coverage_at_k(
+    retrieved: list[int],
+    retrieved_docs: list[int],
+    relevant: dict[int, int],
+    relevant_docs: set[int],
+    k: int,
+) -> float:
+    """Fraction of a question's documents that contributed a relevant passage.
+
+    Hit rate credits a question as soon as one relevant chunk arrives. A
+    comparison needs a figure from each card, so it can score 1.0 on hit rate
+    while the generator sees only one side and either refuses or invents the
+    other. This is the metric that distinguishes those cases: for a
+    single-document question it equals hit rate, and for a comparison it
+    reports how much of the required evidence actually reached the context.
+    """
+    if not relevant_docs:
+        return 0.0
+    covered = {
+        doc_id
+        for chunk_id, doc_id in zip(retrieved[:k], retrieved_docs[:k], strict=False)
+        if chunk_id in relevant
+    }
+    return len(covered & relevant_docs) / len(relevant_docs)
+
+
 def score_question(
     retrieved: list[int],
     retrieved_docs: list[int],
@@ -96,5 +122,8 @@ def score_question(
         scores[f"ndcg@{k}"] = ndcg_at_k(retrieved, relevant, k)
         scores[f"doc_hit_rate@{k}"] = document_hit_rate(
             retrieved_docs, relevant_docs, k
+        )
+        scores[f"evidence@{k}"] = evidence_coverage_at_k(
+            retrieved, retrieved_docs, relevant, relevant_docs, k
         )
     return scores

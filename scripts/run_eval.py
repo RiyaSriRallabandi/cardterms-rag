@@ -21,9 +21,13 @@ from cardterms.db import get_conn
 from cardterms.eval.metrics import score_question
 from cardterms.eval.relevance import relevant_chunks, relevant_documents
 from cardterms.eval.stats import bootstrap_ci
+from cardterms.generate.answer import generate
+from cardterms.generate.validate import validate
 from cardterms.logging import bind_run, configure_logging, log, new_run_id
 from cardterms.retrieve.bm25 import BM25Retriever
 from cardterms.retrieve.dense import DenseRetriever
+from cardterms.retrieve.diversify import diversify, select_by_entity
+from cardterms.retrieve.entities import build_index, detect
 from cardterms.retrieve.rerank import CrossEncoderReranker
 
 # Questions with no labelled answer are scored in generation, not retrieval.
@@ -63,6 +67,20 @@ def main() -> None:
         help="pool size retrieved before reranking",
     )
     parser.add_argument("--augment-rerank", action="store_true")
+    parser.add_argument(
+        "--max-per-doc",
+        type=int,
+        help="cap passages from any one document within the top-k window",
+    )
+    parser.add_argument(
+        "--entity-select",
+        action="store_true",
+        help="reserve top-k slots for each card the question names",
+    )
+    parser.add_argument("--generate", action="store_true")
+    parser.add_argument("--provider", default="ollama", choices=["ollama", "groq"])
+    parser.add_argument("--gen-model", help="override the generator model")
+    parser.add_argument("--prompt", default="answer_v1")
     args = parser.parse_args()
 
     if args.mode == "dense" and not args.model:
@@ -99,6 +117,20 @@ def main() -> None:
         if args.augment_rerank:
             run_name += "-aug"
 
+    if args.max_per_doc:
+        resolved["retrieval"]["max_per_doc"] = args.max_per_doc
+        run_name += f"_cap{args.max_per_doc}"
+
+    if args.entity_select:
+        resolved["retrieval"]["entity_select"] = True
+        run_name += "_ent"
+
+    if args.generate:
+        resolved["generation"]["provider"] = args.provider
+        resolved["generation"]["model_name"] = args.gen_model or "default"
+        resolved["generation"]["prompt_version"] = args.prompt
+        run_name += f"_gen-{args.provider}"
+
     run_id = new_run_id()
     bind_run(run_id, chunk_set=chunk_set, mode=args.mode)
 
@@ -107,8 +139,8 @@ def main() -> None:
 
     with get_conn() as conn:
         questions = conn.execute(
-            "SELECT id, question_uid, question, category FROM eval_questions "
-            "ORDER BY question_uid"
+            "SELECT id, question_uid, question, category, reference_answer "
+            "FROM eval_questions ORDER BY question_uid"
         ).fetchall()
         by_question = relevant_chunks(conn, chunk_set)
         docs_by_question = relevant_documents(conn)
@@ -144,10 +176,13 @@ def main() -> None:
             else None
         )
 
+        entity_index = build_index(conn) if args.entity_select else {}
+
         # The dense retriever queries through this connection, so retrieval
         # runs inside the same block.
         for question in tqdm(questions, desc=run_name):
-            if question["category"] in UNSCORED_CATEGORIES:
+            scored = question["category"] not in UNSCORED_CATEGORIES
+            if not scored and not args.generate:
                 continue
 
             started = time.perf_counter()
@@ -156,6 +191,14 @@ def main() -> None:
                 results = reranker.rerank(question["question"], pool, depth)
             else:
                 results = retriever.search(question["question"], depth)
+            if args.entity_select:
+                results = select_by_entity(
+                    results,
+                    config.retrieval.top_k,
+                    detect(question["question"], entity_index),
+                )
+            if args.max_per_doc:
+                results = diversify(results, config.retrieval.top_k, args.max_per_doc)
             latency_ms = (time.perf_counter() - started) * 1000
 
             chunk_ids = [chunk_id for chunk_id, _, _ in results]
@@ -169,6 +212,20 @@ def main() -> None:
                 config.evaluation.k_values,
             )
 
+            answer = None
+            checks: dict = {}
+            if args.generate:
+                answer = generate(
+                    conn,
+                    question["question"],
+                    results[: config.retrieval.top_k],
+                    prompt_version=args.prompt,
+                    provider=args.provider,
+                    model=args.gen_model,
+                    max_context_tokens=config.generation.max_context_tokens,
+                )
+                checks = validate(answer, question["reference_answer"])
+
             per_question.append(
                 {
                     "question_id": question["id"],
@@ -179,21 +236,32 @@ def main() -> None:
                         for i, (c, d, s) in enumerate(results, start=1)
                     ],
                     "latency_ms": latency_ms,
+                    "scored": scored,
+                    "answer": answer.text if answer else None,
+                    "abstained": answer.abstained if answer else None,
+                    "abstention_kind": answer.abstention_kind if answer else None,
+                    "cited": answer.cited if answer else [],
+                    "checks": checks,
                 }
             )
 
-    metric_names = sorted(per_question[0]["scores"]) if per_question else []
+    # Retrieval metrics average only over questions that have labels.
+    # Unanswerable and ambiguous questions are generated for but not scored on
+    # retrieval, and including them would depress every aggregate by a fifth.
+    retrieval_rows = [r for r in per_question if r["scored"]]
+
+    metric_names = sorted(retrieval_rows[0]["scores"]) if retrieval_rows else []
     aggregate = {}
     for name in metric_names:
         mean, low, high = bootstrap_ci(
-            [row["scores"][name] for row in per_question],
+            [row["scores"][name] for row in retrieval_rows],
             resamples=config.evaluation.bootstrap_samples,
         )
         aggregate[name] = {"mean": mean, "ci_low": low, "ci_high": high}
 
     by_category: dict[str, dict[str, float]] = {}
-    for category in sorted({row["category"] for row in per_question}):
-        rows = [r for r in per_question if r["category"] == category]
+    for category in sorted({row["category"] for row in retrieval_rows}):
+        rows = [r for r in retrieval_rows if r["category"] == category]
         by_category[category] = {
             "n": len(rows),
             **{
@@ -207,14 +275,18 @@ def main() -> None:
             conn.execute(
                 """
                 INSERT INTO run_results
-                    (run_id, question_id, retrieved, metrics, latencies)
-                VALUES (%s, %s, %s, %s, %s)
+                    (run_id, question_id, retrieved, answer, citations,
+                     abstained, metrics, latencies)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                 """,
                 (
                     run_id,
                     row["question_id"],
                     json.dumps(row["retrieved"]),
-                    json.dumps(row["scores"]),
+                    row.get("answer"),
+                    json.dumps(row.get("cited", [])),
+                    row.get("abstained"),
+                    json.dumps({**row["scores"], **row.get("checks", {})}),
                     json.dumps({"retrieval_ms": row["latency_ms"]}),
                 ),
             )
@@ -228,17 +300,54 @@ def main() -> None:
     log.info("run_complete", run_id=run_id, questions=len(per_question))
 
     print(f"\n{'=' * 66}\n{run_name}   run {run_id[:8]}\n{'=' * 66}")
-    print(f"{len(per_question)} scored questions\n")
-    for name in ("hit_rate@5", "recall@5", "mrr", "doc_hit_rate@5", "ndcg@10"):
+    print(f"{len(retrieval_rows)} scored questions of {len(per_question)} run\n")
+    for name in (
+        "hit_rate@5",
+        "evidence@5",
+        "recall@5",
+        "mrr",
+        "doc_hit_rate@5",
+        "ndcg@10",
+    ):
         if name in aggregate:
             value = aggregate[name]
             print(
                 f"  {name:16s} {value['mean']:.3f}  "
                 f"[{value['ci_low']:.3f}, {value['ci_high']:.3f}]"
             )
-    print("\n  by category (hit_rate@5):")
+    print("\n  by category (hit_rate@5 / evidence@5):")
     for category, values in by_category.items():
-        print(f"    {category:20s} {values['hit_rate@5']:.3f}   n={values['n']}")
+        print(
+            f"    {category:20s} {values['hit_rate@5']:.3f}   "
+            f"{values.get('evidence@5', float('nan')):.3f}   n={values['n']}"
+        )
+
+    if args.generate:
+        answerable = [r for r in per_question if r["scored"]]
+        refusable = [r for r in per_question if not r["scored"]]
+
+        false_abstain = sum(1 for r in answerable if r["abstained"])
+        correct_abstain = sum(1 for r in refusable if r["abstained"])
+        bad_citations = sum(
+            1 for r in answerable if not r["checks"].get("citations_valid", True)
+        )
+        uncited = sum(r["checks"].get("uncited_claims", 0) for r in answerable)
+        figure_checked = [
+            r
+            for r in answerable
+            if r["checks"].get("contains_reference_figure") is not None
+        ]
+        figure_hits = sum(
+            1 for r in figure_checked if r["checks"]["contains_reference_figure"]
+        )
+
+        print("\n  generation")
+        print(f"    correct abstention   {correct_abstain}/{len(refusable)}")
+        print(f"    false abstention     {false_abstain}/{len(answerable)}")
+        print(f"    invalid citations    {bad_citations} answer(s)")
+        print(f"    uncited claims       {uncited} sentence(s)")
+        if figure_checked:
+            print(f"    expected figure present {figure_hits}/{len(figure_checked)}")
 
 
 if __name__ == "__main__":

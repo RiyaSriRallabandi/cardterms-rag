@@ -1,0 +1,253 @@
+
+vocabulary: 240 distinctive tokens
+
+  ambig_annual_fee                       ambiguous          gold -
+    Do I have to pay an annual fee?
+       (no card recognised)
+  ambig_apr                              ambiguous          gold -
+    What's my interest rate?
+       (no card recognised)
+  ambig_foreign_transaction              ambiguous          gold -
+    Will I get charged extra for using my card abroad?
+       (no card recognised)
+  ambig_late_fee                         ambiguous          gold -
+    How much is the late fee?
+       (no card recognised)
+  ambig_synchrony_card                   ambiguous          gold -
+    What's the minimum interest charge on my Synchrony card?
+       (no card recognised)
+  cmp_annual_fee_iberia_vs_suncountry    comparison         gold 1/2
+    Is the annual fee higher on the Iberia Visa Signature or the Sun Country Visa Signature?
+     * iberia                         1 docs   1 gold
+  cmp_apr_bealls_vs_jcpenney_mc          comparison         gold 4/4
+    Which charges more interest on purchases, the Bealls Outlet card or the JCPenney Mastercard?
+     * jcpenney                       2 docs   1 gold
+     * bealls+outlet                  3 docs   3 gold
+  cmp_apr_elga_vs_wellsville             comparison         gold 2/2
+    Which is cheaper to carry a balance on, the ELGA Visa Business card or the TD Bank Wellsville ca
+     * wellsville                     1 docs   1 gold
+     * elga                           5 docs   1 gold
+  cmp_late_fee_commerce_vs_marine        comparison         gold 1/2
+    Whose first late payment fee is higher, Commerce Bank's or Marine Federal's?
+     * marine                         5 docs   1 gold
+  cmp_late_fee_smilecare_vs_commerce     comparison         gold 1/2
+    Which is higher, the late payment fee on the My Smile Care account or Commerce Bank's first late
+     * care+smile                     1 docs   1 gold
+  cmp_min_interest_jcpenney_vs_burkes    comparison         gold 3/4
+    Which has the lower minimum interest charge, the JCPenney credit card or the Burkes Outlet card?
+     * burkes+outlet                  2 docs   2 gold
+     * jcpenney                       2 docs   1 gold
+  cmp_min_interest_phillips_vs_jcpenney  comparison         gold 2/2
+    Do the Phillips 66 commercial card and the JCPenney credit card have the same minimum interest c
+     * phillips                       1 docs   1 gold
+     * jcpenney                       2 docs   1 gold
+  cmp_onpoint_platinum_variants          comparison         gold 1/1
+    Does adding rewards to the OnPoint Platinum Visa raise the balance transfer APR?
+     * onpoint+platinum              14 docs   1 gold
+  cmp_saks_variants_apr                  comparison         gold 2/2
+    Is the Saks World Mastercard or the plain Saks Credit Card cheaper for carrying a balance?
+     * saks                           2 docs   2 gold
+  cmp_secured_annual_fee                 comparison         gold 2/2
+    Do the Mission Lane Secured Visa and the Marine Federal Credit Builder both charge an annual fee
+       builder                        1 docs   0 gold
+     * lane+mission                   4 docs   1 gold
+     * marine                         5 docs   1 gold
+  cmp_secured_apr_missionlane_vs_marine  comparison         gold 2/2
+    Between the Mission Lane Secured Visa and the Marine Federal Visa Credit Builder Secured, which 
+       builder                        1 docs   0 gold
+     * lane+mission                   4 docs   1 gold
+     * marine                         5 docs   1 gold
+  1st_united_platinum_purchase_apr       entity_confusable  gold 0/1
+    What APR range applies to purchases on the 1st United Visa Platinum card?
+       platinum                      10 docs   0 gold
+  jcpenney_card_min_interest             entity_confusable  gold 1/1
+    What's the minimum interest charge on the JCPenney credit card?
+     * jcpenney                       2 docs   1 gold
+  jcpenney_mastercard_purchase_apr       entity_confusable  gold 1/1
+    What's the purchase APR on the JCPenney Mastercard when the account opens?
+     * jcpenney                       2 docs   1 gold
+  marine_credit_builder_annual_fee       entity_confusable  gold 1/1
+    Does the Marine Federal Visa Credit Builder card have an annual fee?
+       builder                        1 docs   0 gold
+     * marine                         5 docs   1 gold
+  marine_credit_builder_secured_apr      entity_confusable  gold 1/1
+    What's the APR on the Marine Federal Visa Credit Builder Secured card?
+       builder                        1 docs   0 gold
+     * marine                         5 docs   1 gold
+  mission_lane_webbank_issuer            entity_confusable  gold 1/1
+    Which bank actually issues the Mission Lane Visa credit card?
+     * lane+mission                   4 docs   1 gold
+  myacademy_rewards_phone                entity_confusable  gold 2/2
+    What number do I call about my myAcademy Rewards Mastercard?
+     * myacademy                      2 docs   2 gold
+  myacademy_world_phone                  entity_confusable  gold 2/2
+    What number do I call about my myAcademy Rewards World Mastercard?
+     * myacademy                      2 docs   2 gold
+  nissan_signature_cash_advance_fee      entity_confusable  gold 1/1
+    What's the cash advance fee on the Nissan Visa Signature card?
+     * nissan                         2 docs   1 gold
+  nissan_signature_returned_payment      entity_confusable  gold 1/1
+    What does Synchrony charge if a payment on the Nissan Visa Signature card is returned?
+     * nissan                         2 docs   1 gold
+  onpoint_platinum_bt_apr                entity_confusable  gold 1/1
+    Once the intro period ends, what's the balance transfer APR on the OnPoint Platinum Visa?
+     * onpoint+platinum              14 docs   1 gold
+  onpoint_platinum_rewards_bt_apr        entity_confusable  gold 1/1
+    Once the intro period ends, what's the balance transfer APR on the OnPoint Platinum Visa with Re
+     * onpoint+platinum              14 docs   1 gold
+  opensky_gold_annual_fee                entity_confusable  gold 1/1
+    What's the annual fee on the OpenSky Gold card?
+     * gold+opensky                   6 docs   1 gold
+  opensky_plus_annual_fee                entity_confusable  gold 1/1
+    Does the OpenSky Plus card charge an annual fee?
+     * opensky                        4 docs   1 gold
+  opensky_plus_late_fee                  entity_confusable  gold 1/1
+    How much does OpenSky charge the first time I pay the Plus card late?
+     * opensky                        4 docs   1 gold
+  saks_credit_card_purchase_apr          entity_confusable  gold 2/2
+    What's the purchase APR on the Saks Credit Card?
+     * saks                           2 docs   2 gold
+  saks_world_elite_phone                 entity_confusable  gold 2/2
+    What number do I call for customer service on the Saks World Elite Mastercard?
+     * elite+saks                     6 docs   2 gold
+  saks_world_mastercard_purchase_apr     entity_confusable  gold 1/1
+    What's the purchase APR on the Saks World Mastercard?
+     * saks                           2 docs   1 gold
+  smart_option_visa_margin               entity_confusable  gold 1/1
+    What margin does First Citizens add to the Prime Rate for purchases on the Smart Option Visa?
+     * citizens                       9 docs   1 gold
+  target_mastercard_returned_payment     entity_confusable  gold 1/1
+    What's the returned payment fee on the Target Mastercard?
+     * target                         6 docs   1 gold
+  venmo_signature_foreign_transaction    entity_confusable  gold 1/1
+    Does the Venmo Visa Signature card charge a foreign transaction fee?
+     * venmo                          2 docs   1 gold
+  1st_united_balance_transfer_fee        single_fact        gold 0/1
+    What does 1st United Credit Union charge for a balance transfer?
+       (no card recognised)
+  apple_card_coowner_removal             single_fact        gold 1/1
+    Can I remove someone as a co-owner on my Apple Card?
+     * apple                          1 docs   1 gold
+  bealls_outlet_purchase_apr             single_fact        gold 3/3
+    What's the purchase APR on the Bealls Outlet credit card?
+     * bealls+outlet                  3 docs   3 gold
+  burkes_outlet_min_interest             single_fact        gold 2/3
+    What's the smallest interest charge that can appear on my Burkes Outlet credit card?
+     * burkes+outlet                  2 docs   2 gold
+  comenity_smilecare_late_fee            single_fact        gold 1/1
+    What's the late payment fee on the My Smile Care Program credit account?
+     * care+smile                     1 docs   1 gold
+  commerce_first_late_fee                single_fact        gold 0/1
+    What's the late payment fee the first time I pay late on a Commerce Bank credit card?
+       (no card recognised)
+  iberia_annual_fee                      single_fact        gold 1/1
+    What's the annual fee on the Iberia Visa Signature card?
+     * iberia                         1 docs   1 gold
+  jcpenney_mastercard_promo_interest     single_fact        gold 1/1
+    What happens if I don't pay off a promotional balance on the JCPenney Mastercard before the prom
+     * jcpenney                       2 docs   1 gold
+  marine_late_payment_fee                single_fact        gold 1/1
+    What's the late payment fee on a Marine Federal credit card?
+     * marine                         5 docs   1 gold
+  nissan_signature_purchase_apr          single_fact        gold 1/1
+    How is the purchase APR set on the Nissan Visa Signature card?
+     * nissan                         2 docs   1 gold
+  occu_unauthorized_liability            single_fact        gold 2/2
+    If someone uses my OCCU credit card without permission, how much can I be charged?
+     * occu                           2 docs   2 gold
+  onpoint_governing_law                  single_fact        gold 2/2
+    Which state's law governs my OnPoint Community Credit Union Visa agreement?
+     * community+onpoint              7 docs   2 gold
+  opensky_gold_cash_advance              single_fact        gold 1/1
+    How much does OpenSky charge for a cash advance on the Gold card?
+     * gold+opensky                   6 docs   1 gold
+  phillips66_min_interest                single_fact        gold 1/1
+    What's the minimum interest charge on the Phillips 66 commercial credit card?
+     * phillips                       1 docs   1 gold
+  southern_bank_expedited_card           single_fact        gold 1/1
+    How much does Southern Bank charge to have a replacement credit card delivered quickly?
+     * southern                       1 docs   1 gold
+  synchrony_preferred_min_payment_cap    single_fact        gold 1/1
+    Can the minimum payment on my Synchrony Preferred Mastercard ever be more than my full balance?
+     * preferred                      3 docs   1 gold
+  synchrony_preferred_paper_statement    single_fact        gold 1/1
+    How do I avoid the paper statement fee on the Synchrony Preferred Mastercard?
+     * preferred                      3 docs   1 gold
+  target_mastercard_annual_fee           single_fact        gold 1/1
+    Does the Target Mastercard have an annual fee?
+     * target                         6 docs   1 gold
+  td_wellsville_apr                      single_fact        gold 1/1
+    What's the APR for regular purchases on the TD Bank Wellsville card?
+     * wellsville                     1 docs   1 gold
+  venmo_cash_advance_fee                 single_fact        gold 1/1
+    What does a cash advance cost on the Venmo Visa card?
+     * venmo                          2 docs   1 gold
+  elga_business_apr                      table_lookup       gold 1/1
+    What's the APR on the ELGA Credit Union Visa Business card?
+     * elga                           5 docs   1 gold
+  iberia_foreign_transaction             table_lookup       gold 1/1
+    Does the Iberia Visa Signature card charge a foreign transaction fee?
+     * iberia                         1 docs   1 gold
+  mission_lane_secured_annual_fee        table_lookup       gold 1/1
+    Is there an annual fee on the Mission Lane Secured Visa?
+     * lane+mission                   4 docs   1 gold
+  mission_lane_secured_purchase_apr      table_lookup       gold 1/1
+    What's the purchase APR on the Mission Lane Secured Visa?
+     * lane+mission                   4 docs   1 gold
+  nissan_signature_min_interest          table_lookup       gold 1/1
+    What's the smallest interest charge on the Nissan Visa Signature card?
+     * nissan                         2 docs   1 gold
+  opensky_gold_foreign_transaction       table_lookup       gold 1/1
+    What does the OpenSky Gold card charge on purchases made abroad?
+     * gold+opensky                   6 docs   1 gold
+  sun_country_annual_fee                 table_lookup       gold 0/1
+    What's the annual fee on the Sun Country Visa Signature card?
+       (no card recognised)
+  target_mastercard_cash_advance         table_lookup       gold 1/1
+    What does it cost to take a cash advance on the Target Mastercard?
+     * target                         6 docs   1 gold
+  venmo_paper_statement_fee              table_lookup       gold 1/1
+    Is there a charge for getting paper statements on the Venmo Visa card?
+     * venmo                          2 docs   1 gold
+  unans_alliant_billing_rights           unanswerable       gold -
+    What are my billing rights on the Alliant Credit Union PlatinumRewards card?
+       alliant+platinumrewards        5 docs   0 gold
+  unans_amex_platinum_apr                unanswerable       gold -
+    What's the APR on the American Express Platinum Card?
+       platinum                      10 docs   0 gold
+  unans_branch_hours                     unanswerable       gold -
+    What time does my local Commerce Bank branch open?
+       (no card recognised)
+  unans_chase_sapphire                   unanswerable       gold -
+    What's the annual fee on the Chase Sapphire Preferred?
+       preferred                      3 docs   0 gold
+  unans_credit_score_needed              unanswerable       gold -
+    What credit score do I need to be approved for the Sun Country Visa Signature?
+       (no card recognised)
+  unans_current_balance                  unanswerable       gold -
+    What's the balance on my Apple Card right now?
+       apple                          1 docs   0 gold
+  unans_jcpenney_rewards_rate            unanswerable       gold -
+    How many points per dollar do I earn with the JCPenney credit card?
+       jcpenney                       2 docs   0 gold
+       points                         2 docs   0 gold
+  unans_merchant_acceptance              unanswerable       gold -
+    Does Costco accept the Bealls Outlet credit card?
+       bealls+outlet                  3 docs   0 gold
+  unans_out_of_scope                     unanswerable       gold -
+    What's the weather forecast for Pittsburgh this weekend?
+       (no card recognised)
+  unans_saks_signup_bonus                unanswerable       gold -
+    What sign-up bonus do I get with the Saks World Elite Mastercard?
+       elite+saks                     6 docs   0 gold
+
+  questions resolving to two or more entities, by category
+    ambiguous              0/  5
+    comparison             6/ 11
+    entity_confusable      2/ 21
+    single_fact            0/ 20
+    table_lookup           0/  9
+    unanswerable           1/ 10
+
+  9 questions name two or more cards
+  13/18 multi-document questions have every gold document inside a detected entity
