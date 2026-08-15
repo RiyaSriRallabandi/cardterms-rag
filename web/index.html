@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CardTerms · credit card agreement search</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0b0f; --panel:#12141b; --panel2:#171a23;
+    --line:#242833; --line2:#2f3442;
+    --text:#e8eaf0; --muted:#8b90a0; --dim:#5c6272;
+    --accent:#ffb347; --accent2:#ff7a59; --good:#5ee0a8;
+  }
+  *{ -webkit-font-smoothing:antialiased; }
+  body{
+    font-family:'Instrument Sans',system-ui,sans-serif;
+    background:var(--bg); color:var(--text); overflow-x:hidden;
+  }
+  .mono{ font-family:'JetBrains Mono',ui-monospace,monospace; }
+
+  /* Ambient light behind the header, so the page has depth without imagery. */
+  .glow{
+    position:fixed; inset:-30% -10% auto -10%; height:70vh; pointer-events:none; z-index:0;
+    background:
+      radial-gradient(50% 50% at 25% 30%, rgba(255,122,89,.16), transparent 70%),
+      radial-gradient(45% 45% at 75% 20%, rgba(255,179,71,.13), transparent 70%);
+    filter:blur(30px);
+  }
+  .grid-bg{
+    position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.35;
+    background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size:56px 56px;
+    mask-image:radial-gradient(120% 70% at 50% 0%, #000 30%, transparent 75%);
+  }
+
+  .panel{
+    background:linear-gradient(180deg, var(--panel) 0%, var(--panel2) 100%);
+    border:1px solid var(--line); border-radius:16px;
+  }
+  .panel-lift{ box-shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 12px 40px -18px rgba(0,0,0,.9); }
+
+  .chip{
+    background:rgba(255,255,255,.03); border:1px solid var(--line);
+    border-radius:999px; transition:all .18s ease;
+  }
+  .chip:hover{ border-color:var(--line2); background:rgba(255,255,255,.06); transform:translateY(-1px); }
+
+  .ask-wrap{ position:relative; border-radius:18px; padding:1px; background:linear-gradient(135deg, #2a2f3d, #1a1d26); }
+  .ask-wrap:focus-within{ background:linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .ask-input{ background:#0e1015; border-radius:17px; }
+
+  .btn{ background:linear-gradient(135deg, var(--accent), var(--accent2)); color:#1a1206; font-weight:600; }
+  .btn:hover{ filter:brightness(1.08); }
+  .btn:active{ transform:translateY(1px); }
+
+  .cite{ color:var(--accent); cursor:pointer; transition:all .15s ease; }
+  .cite:hover{ text-decoration:underline; }
+
+  mark{ background:rgba(255,179,71,.22); color:var(--accent); border-radius:3px; padding:0 .15em; }
+
+  .cited-card{ border-color:rgba(255,179,71,.35); }
+  .cited-card::before{
+    content:''; position:absolute; left:0; top:14px; bottom:14px; width:2px; border-radius:2px;
+    background:linear-gradient(180deg, var(--accent), var(--accent2));
+  }
+
+  .fade{ animation:fade .4s cubic-bezier(.2,.7,.3,1) both; }
+  @keyframes fade{ from{ opacity:0; transform:translateY(10px) } to{ opacity:1; transform:none } }
+  .stagger>*{ animation:fade .4s cubic-bezier(.2,.7,.3,1) both; }
+  .stagger>*:nth-child(2){ animation-delay:.05s } .stagger>*:nth-child(3){ animation-delay:.1s }
+  .stagger>*:nth-child(4){ animation-delay:.15s } .stagger>*:nth-child(5){ animation-delay:.2s }
+
+  .shimmer{
+    background:linear-gradient(90deg, #171a23 25%, #1f2430 50%, #171a23 75%);
+    background-size:200% 100%; animation:sh 1.4s infinite;
+  }
+  @keyframes sh{ to{ background-position:-200% 0 } }
+
+  .scroll::-webkit-scrollbar{ width:6px }
+  .scroll::-webkit-scrollbar-thumb{ background:var(--line2); border-radius:3px }
+  .scroll::-webkit-scrollbar-track{ background:transparent }
+</style>
+</head>
+<body class="min-h-screen">
+<div class="glow"></div><div class="grid-bg"></div>
+
+<div class="relative z-10">
+
+  <header class="border-b" style="border-color:var(--line)">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center gap-3">
+      <div class="w-7 h-7 rounded-lg flex items-center justify-center mono text-[13px] font-bold"
+           style="background:linear-gradient(135deg,var(--accent),var(--accent2));color:#1a1206">C</div>
+      <span class="font-semibold tracking-tight">CardTerms</span>
+      <span class="hidden sm:block text-sm" style="color:var(--dim)">agreement search</span>
+      <div class="ml-auto flex items-center gap-2 text-[11px] mono" style="color:var(--muted)">
+        <span class="w-1.5 h-1.5 rounded-full" style="background:var(--good)"></span>
+        <span id="status">ready</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-6">
+
+    <section class="pt-16 pb-10 text-center">
+      <h1 class="text-4xl sm:text-5xl font-bold tracking-tight leading-[1.1]">
+        Every card term,<br>
+        <span style="background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent">
+          straight from the agreement.</span>
+      </h1>
+      <p class="mt-5 text-[15px] max-w-xl mx-auto leading-relaxed" style="color:var(--muted)">
+        Ask about fees, rates and terms across 247 credit card agreements.
+        Every answer arrives with the exact contract text it came from.
+      </p>
+
+      <div class="mt-8 flex items-center justify-center gap-6 text-[11px] mono" style="color:var(--dim)">
+        <span><b style="color:var(--text)">247</b> agreements</span>
+        <span class="w-px h-3" style="background:var(--line2)"></span>
+        <span><b style="color:var(--text)">46</b> issuers</span>
+        <span class="w-px h-3" style="background:var(--line2)"></span>
+        <span><b style="color:var(--text)">2,722</b> pages</span>
+      </div>
+    </section>
+
+    <form id="form" class="ask-wrap max-w-3xl mx-auto">
+      <div class="ask-input flex items-center gap-2 pl-5 pr-2 py-2">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="color:var(--dim)">
+          <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+          <path d="M20 20l-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <input id="q" autocomplete="off"
+          class="flex-1 bg-transparent outline-none text-[15px] py-2.5"
+          style="color:var(--text)"
+          placeholder="Type your question here">
+        <button id="go" class="btn px-5 py-2.5 rounded-xl text-sm">Ask</button>
+      </div>
+    </form>
+
+    <div id="examples" class="mt-5 flex flex-wrap justify-center gap-2 text-[13px] max-w-4xl mx-auto"></div>
+
+    <section id="out" class="mt-12 pb-24"></section>
+
+    <footer class="pb-16 text-[11px] leading-relaxed max-w-2xl mx-auto text-center" style="color:var(--dim)">
+      CardTerms searches credit card agreements filed with the Consumer Financial
+      Protection Bureau and answers only from what those documents say.
+      It is a research tool, not legal or financial advice. Confirm any figure
+      against the source text before relying on it.
+    </footer>
+  </main>
+</div>
+
+<script>
+const EXAMPLES = [
+  "What's the annual fee on the OpenSky Gold card?",
+  "What does it cost to take a cash advance on the Target Mastercard?",
+  "Is the annual fee higher on the Iberia Visa Signature or the Sun Country Visa Signature?",
+  "Can I remove someone as a co-owner on my Apple Card?",
+  "Is there a charge for getting paper statements on the Venmo Visa card?",
+  "How much is the late fee?",
+];
+
+// Cards whose names are stated cleanly in their filings. Offered as shortcuts;
+// the search below accepts anything, since the catalogue covers 247 agreements
+// and not every one names its product.
+const POPULAR = [
+  "OpenSky Gold",
+  "OpenSky Plus",
+  "Target Mastercard",
+  "Venmo Visa Signature",
+  "Nissan Visa Signature",
+  "Saks World Elite Mastercard",
+  "Mission Lane Secured Visa",
+  "Apple Card",
+];
+
+const out = document.getElementById('out');
+const qEl = document.getElementById('q');
+const statusEl = document.getElementById('status');
+
+document.getElementById('examples').innerHTML = EXAMPLES.map(e =>
+  `<button class="chip px-3.5 py-2" style="color:var(--muted)"
+     data-q="${e.replace(/"/g,'&quot;')}">${e}</button>`).join('');
+
+document.getElementById('examples').addEventListener('click', ev => {
+  const b = ev.target.closest('[data-q]');
+  if (b) { qEl.value = b.dataset.q; ask(); }
+});
+document.getElementById('form').addEventListener('submit', ev => { ev.preventDefault(); ask(); });
+
+function esc(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+// Cited passages first. Someone checking a figure should not hunt for it.
+function ordered(d){
+  return [...d.passages].sort((a,b) =>
+    (d.cited.includes(b.number)?1:0) - (d.cited.includes(a.number)?1:0));
+}
+
+// Amounts and percentages the answer states, so they can be marked in the
+// source text and verified at a glance.
+function figures(answer){
+  return [...new Set((answer.match(/\$\s?[\d,]+(?:\.\d+)?|\d+(?:\.\d+)?\s?%/g)||[])
+    .map(f => f.replace(/\s/g,'')))];
+}
+
+function highlight(text, figs){
+  let html = esc(text);
+  for (const f of figs){
+    const num = f.replace(/^\$/,'').replace(/%$/,'');
+    const body = num.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+    // Tolerate "$40" in the answer matching "$40.00" in the agreement.
+    const pattern = f.startsWith('$') ? `\\$\\s?${body}(?:\\.00)?\\b` : `${body}(?:\\.00)?\\s?%`;
+    html = html.replace(new RegExp(pattern,'g'), m => `<mark>${m}</mark>`);
+  }
+  return html;
+}
+
+function loading(){
+  statusEl.textContent = 'searching';
+  out.innerHTML = `
+  <div class="grid md:grid-cols-5 gap-6 fade">
+    <div class="md:col-span-2 space-y-3">
+      <div class="shimmer h-3 w-20 rounded"></div>
+      <div class="panel p-5 space-y-3">
+        <div class="shimmer h-4 w-full rounded"></div>
+        <div class="shimmer h-4 w-4/5 rounded"></div>
+      </div>
+    </div>
+    <div class="md:col-span-3 space-y-3">
+      <div class="shimmer h-3 w-28 rounded"></div>
+      ${'<div class="panel p-4 space-y-2"><div class="shimmer h-3 w-1/3 rounded"></div><div class="shimmer h-3 w-full rounded"></div><div class="shimmer h-3 w-11/12 rounded"></div></div>'.repeat(3)}
+    </div>
+  </div>`;
+}
+
+async function ask(){
+  const question = qEl.value.trim();
+  if (question.length < 3) return;
+  loading();
+  try{
+    const res = await fetch('/api/ask',{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({question})
+    });
+    if(!res.ok) throw new Error(await res.text());
+    render(await res.json());
+  }catch(e){
+    statusEl.textContent = 'error';
+    out.innerHTML = `<div class="panel p-4 text-sm fade" style="border-color:#5a2a2a;color:#ffb0a0">${esc(String(e))}</div>`;
+  }
+}
+
+function render(d){
+  statusEl.textContent = 'ready';
+  if (d.abstention_kind === 'needs_clarification') return renderClarify(d);
+
+  const answerHtml = d.abstained
+    ? `<p style="color:var(--muted)">These agreements do not state this. Nothing has been filled in.</p>`
+    : `<p class="text-[17px] leading-relaxed">${
+        esc(d.answer).replace(/\[(\d+)\]/g,
+          (_,n)=>`<span class="cite mono text-[12px] align-super" data-n="${n}">[${n}]</span>`)}</p>`;
+
+  out.innerHTML = `
+  <div class="grid md:grid-cols-5 gap-6 fade">
+
+    <div class="md:col-span-2">
+      <div class="text-[10px] uppercase tracking-[.14em] mb-2.5" style="color:var(--dim)">Answer</div>
+      <div class="panel panel-lift p-5">${answerHtml}</div>
+
+      <p class="mt-3 text-[11px] leading-relaxed" style="color:var(--dim)">
+        Highlighted amounts appear in the contract text alongside. Check them
+        before quoting a figure to a cardholder.
+      </p>
+    </div>
+
+    <div class="md:col-span-3">
+      <div class="text-[10px] uppercase tracking-[.14em] mb-2.5" style="color:var(--dim)">
+        Source text${d.passages.length ? ` · ${d.cited.length} of ${d.passages.length} cited` : ''}
+      </div>
+      <div class="space-y-3 stagger">
+        ${ordered(d).map(p => {
+          const on = d.cited.includes(p.number);
+          return `
+          <div id="p${p.number}" class="panel p-4 relative ${on?'cited-card':''}" style="${on?'':'opacity:.55'}">
+            <div class="flex items-center gap-2 mb-2.5">
+              <span class="mono text-[11px] px-1.5 py-0.5 rounded"
+                style="background:${on?'rgba(255,179,71,.14)':'rgba(255,255,255,.04)'};color:${on?'var(--accent)':'var(--dim)'}">[${p.number}]</span>
+              <span class="text-[13px] font-medium truncate">${esc(p.product || 'Cardholder agreement')}</span>
+              ${on?`<span class="ml-auto text-[9px] uppercase tracking-[.14em] font-semibold shrink-0"
+                     style="color:var(--accent)">cited</span>`:''}
+            </div>
+            <div class="text-[11px] mono mb-2.5" style="color:var(--dim)">${esc(p.issuer)} · page ${p.page}</div>
+            <div class="scroll text-[12.5px] leading-relaxed whitespace-pre-wrap max-h-52 overflow-y-auto"
+                 style="color:#c3c8d4">${highlight(p.text, figures(d.answer))}</div>
+          </div>`;
+        }).join('') || `<div class="panel p-4 text-sm" style="color:var(--muted)">No passages retrieved.</div>`}
+      </div>
+    </div>
+  </div>`;
+
+  out.querySelectorAll('.cite').forEach(el => el.addEventListener('click', () => {
+    const box = document.getElementById('p' + el.dataset.n);
+    if(!box) return;
+    box.scrollIntoView({behavior:'smooth', block:'center'});
+    box.animate([{boxShadow:'0 0 0 0 rgba(255,179,71,.55)'},{boxShadow:'0 0 0 12px rgba(255,179,71,0)'}],
+      {duration:700, easing:'ease-out'});
+  }));
+}
+
+function renderClarify(d){
+  statusEl.textContent = 'ready';
+  out.innerHTML = `
+  <div class="max-w-2xl mx-auto fade">
+    <div class="panel panel-lift p-6">
+      <div class="flex items-center gap-2.5 mb-1">
+        <span class="w-7 h-7 rounded-lg flex items-center justify-center"
+              style="background:rgba(255,179,71,.12)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style="color:var(--accent)">
+            <path d="M12 17h.01M12 13.5c0-2 2.5-2.2 2.5-4.2A2.5 2.5 0 0 0 9.6 8.6"
+              stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+          </svg>
+        </span>
+        <div class="font-semibold">Which card are you asking about?</div>
+      </div>
+      <p class="text-[13px] leading-relaxed ml-[38px]" style="color:var(--muted)">
+        Fees and rates differ from card to card, so we need to know which one
+        before we can answer.
+      </p>
+
+      <div class="mt-5 text-[10px] uppercase tracking-[.14em]" style="color:var(--dim)">
+        Popular cards
+      </div>
+      <div class="mt-2.5 flex flex-wrap gap-2">
+        ${POPULAR.map(c => `<button class="chip px-3 py-1.5 text-[13px]"
+            style="color:var(--muted)" data-name="${esc(c)}">${esc(c)}</button>`).join('')}
+      </div>
+
+      <div class="mt-5 text-[10px] uppercase tracking-[.14em]" style="color:var(--dim)">
+        Or search
+      </div>
+      <input id="cardq" placeholder="Type a card or issuer, then press Enter" autocomplete="off"
+        class="mt-2 w-full px-4 py-3 rounded-xl outline-none text-[14px]"
+        style="background:#0e1015;border:1px solid var(--line);color:var(--text)">
+      <div id="cards" class="mt-2 max-h-64 overflow-y-auto scroll rounded-xl"></div>
+    </div>
+  </div>`;
+
+  const list = document.getElementById('cards');
+  const input = document.getElementById('cardq');
+
+  function choose(name){
+    // Second turn of the exchange: re-ask with the chosen card attached.
+    qEl.value = `${d.question.replace(/\?$/,'')} on the ${name}?`;
+    ask();
+  }
+
+  async function load(q){
+    if (!q){ list.innerHTML = ''; return; }
+    const rows = await (await fetch('/api/cards?q='+encodeURIComponent(q))).json();
+    const options = rows.map(r => `
+      <button class="w-full text-left px-4 py-2.5 flex items-baseline gap-2 transition-colors hover:bg-white/[.04]"
+        style="border-bottom:1px solid var(--line)"
+        data-name="${esc(r.product).replace(/"/g,'&quot;')}">
+        <span class="text-[13.5px]">${esc(r.product)}</span>
+        <span class="ml-auto text-[11px] mono shrink-0" style="color:var(--dim)">${esc(r.issuer)}</span>
+      </button>`).join('');
+    // Whatever was typed is always usable, since the catalogue does not name
+    // every card and the search only needs to be a shortcut.
+    list.innerHTML = `<div style="border:1px solid var(--line);border-radius:12px;overflow:hidden">
+      ${options}
+      <button class="w-full text-left px-4 py-2.5 hover:bg-white/[.04] text-[13.5px]"
+        data-name="${esc(q).replace(/"/g,'&quot;')}">
+        Use <span style="color:var(--accent)">${esc(q)}</span>
+      </button></div>`;
+  }
+
+  let t;
+  input.addEventListener('input', () => {
+    clearTimeout(t); t = setTimeout(() => load(input.value.trim()), 180);
+  });
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' && input.value.trim()) { ev.preventDefault(); choose(input.value.trim()); }
+  });
+
+  document.querySelectorAll('[data-name]').forEach(b =>
+    b.addEventListener('click', () => choose(b.dataset.name)));
+  list.addEventListener('click', ev => {
+    const b = ev.target.closest('[data-name]');
+    if (b) choose(b.dataset.name);
+  });
+}
+</script>
+</body>
+</html>

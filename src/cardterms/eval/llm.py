@@ -41,10 +41,22 @@ _settings = Settings()
 # (timestamp, estimated tokens) for requests inside the current window.
 _recent: list[tuple[float, int]] = []
 
+# Seconds the last call spent waiting on the rate limit rather than working.
+# Reported separately from latency: a request that waited 50 seconds for a
+# token budget is not a slow request, it is a throttled one, and conflating
+# the two makes the system look an order of magnitude slower than it is.
+_last_throttle = 0.0
+
+
+def last_throttle_seconds() -> float:
+    return _last_throttle
+
 
 def _pace(model: str, estimated: int) -> None:
     """Block until `estimated` tokens fit inside this model's per-minute budget."""
+    global _last_throttle
     budget = int(MODEL_TPM.get(model, DEFAULT_TPM) * TPM_HEADROOM)
+    started = time.time()
 
     while True:
         cutoff = time.time() - 60
@@ -55,6 +67,7 @@ def _pace(model: str, estimated: int) -> None:
         # Wait for the oldest request to age out of the window.
         time.sleep(max(0.5, 60 - (time.time() - _recent[0][0])))
 
+    _last_throttle = time.time() - started
     _recent.append((time.time(), estimated))
 
 
@@ -112,6 +125,9 @@ def _limit_detail(response: httpx.Response) -> str:
 
 
 def _ollama(messages: list[dict], model: str, temperature: float) -> str:
+    global _last_throttle
+    _last_throttle = 0.0  # nothing to throttle locally
+
     response = httpx.post(
         OLLAMA_ENDPOINT,
         json={

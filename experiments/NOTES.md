@@ -866,3 +866,75 @@ Remaining failures, in the order they would be addressed:
 - 3 questions whose passage sits in the 50-candidate pool but not in the top 5.
 - 2 confabulations on cards absent from the corpus, and 1 question wrongly
   asked for clarification by the entity gate.
+
+
+## Task 13 — Serving and latency
+
+The pipeline moved out of the evaluation script into a service, so the code
+that answers a request is the code that was measured. A serving path that
+reimplements retrieval is a serving path whose accuracy is unknown.
+
+Interface: FastAPI with a single-page client. Every answer is rendered beside
+the passages it was written from, with amounts stated in the answer highlighted
+in the contract text and cited passages promoted above uncited ones. Error
+analysis found that roughly 8% of answers are wrong while carrying a citation,
+so an interface showing the answer alone would present those failures as
+successes. When the entity gate fires the client offers recognisable cards and
+a free-text field, and re-asks with the chosen card appended.
+
+Latency, 12 questions, hosted 8B generator, Apple M1 with 8 GB:
+
+| stage    | p50     | p95      | share |
+|----------|---------|----------|-------|
+| retrieve |   95 ms |   114 ms |  1.0% |
+| rerank   | 8213 ms | 10024 ms | 90.1% |
+| generate |  805 ms |  1044 ms |  8.8% |
+| total    | 9128 ms | 11181 ms |       |
+
+Cold start 8.1 s: the BM25 index, cross-encoder weights and entity vocabulary
+are built once and reused across requests.
+
+Findings:
+
+- **The language model is 9% of the time; the local reranker is 90%.** The
+  assumption that LLM inference dominates a RAG pipeline is wrong here, and only
+  measurement shows it. A cross-encoder reads question and passage together in
+  one forward pass, so cost scales linearly with pool size: 50 passages at up to
+  512 tokens is roughly 25,000 tokens through a 278M-parameter model per
+  question.
+- **Corpus size is not the constraint.** Lexical retrieval over 5,274 chunks
+  returns in 95 ms. The same pipeline over a far larger corpus would look
+  similar. The bottleneck is the deployment target, not the architecture: the
+  same reranking on a modest cloud GPU would take a few hundred milliseconds.
+- **Verified rather than assumed.** The cross-encoder runs on MPS, not a silent
+  CPU fallback. The cost is the hardware.
+- **The obvious optimisation was left untested, deliberately.** Halving the
+  candidate pool would roughly halve latency, but its accuracy cost is
+  unmeasured and testing it means re-running the evaluation and re-validating
+  every reported number against a frozen configuration. What was measured: a
+  pool of 100 is worse than 50 (Task 9), and the cheaper ms-marco cross-encoder
+  costs 8 points of retrieval accuracy. Both plausible speed levers are
+  therefore either unhelpful or known to be expensive; pool sizes below 50 with
+  the bge reranker remain the first thing to try with more time.
+- **Throttling is not latency and is reported separately.** Every benchmarked
+  request waited a median of 51 s for the free tier's 6,000 token per minute
+  budget. Counting that as response time made the system look six times slower
+  than it computes. Latency is 9.1 s; sustained throughput is about two
+  questions per minute. Both are real and they are different facts.
+- **The card picker exposed a data quality problem the index never had.**
+  Product names were extracted from document text and about 40% of filings
+  state none, leaving section headings such as "Application and Solicitation
+  Disclosure" or fragments of prose such as "About your". Retrieval was
+  unaffected because it also matches issuer and body text, but a user-facing
+  list has a higher bar than an index. Names are cleaned for display only: the
+  stored values feed the retrieval index and changing them would invalidate
+  every recorded run.
+
+Known limitation: one filing renders as "A lliant Visa", a space injected
+inside the brand during PDF text extraction. A rule joining a stray single
+letter to the following word would corrupt legitimate names elsewhere, so it is
+left uncorrected.
+
+Deployment: Postgres runs in Docker, the application runs on the host. A
+container cannot reach the Mac GPU, so the reranker would fall back to CPU and
+the dominant stage would get materially slower.
