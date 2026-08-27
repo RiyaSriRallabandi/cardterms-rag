@@ -29,6 +29,7 @@ from cardterms.retrieve.rerank import CrossEncoderReranker
 # Words that describe the document rather than the card. Stripped from the
 # ends of a name, not the middle: "Credit Card" is noise trailing "Venmo Visa
 # Signature" and meaningful inside "Bealls Credit Card Rewards".
+# fmt: off
 DOC_WORDS = {
     "account", "accounts", "agreement", "agreements", "and", "application",
     "card", "cardholder", "cardmember", "cards", "conditions", "consumer",
@@ -36,12 +37,13 @@ DOC_WORDS = {
     "information", "pricing", "program", "solicitation", "statement",
     "terms", "the", "addendum", "final", "rates", "fees",
 }
+# fmt: on
 
 # Filing codes that survive into filenames: "CC 10.1.22", "v211", "sky2".
 _CODE_RE = re.compile(
-    r"\b(?:cc\s*)?v?\d+(?:[._]\d+)+\b"   # 10.1.22
-    r"|\bv\d{2,}\b"                       # v211
-    r"|\b[a-z]{2,6}\d{1,3}\b",            # sky2, plus018
+    r"\b(?:cc\s*)?v?\d+(?:[._]\d+)+\b"  # 10.1.22
+    r"|\bv\d{2,}\b"  # v211
+    r"|\b[a-z]{2,6}\d{1,3}\b",  # sky2, plus018
     re.IGNORECASE,
 )
 
@@ -51,12 +53,14 @@ _CODE_RE = re.compile(
 # sometimes holds a fragment of surrounding prose: "About your", "to the
 # Standard.". Those are rejected in favour of the issuer, which comes from
 # CFPB metadata and is always clean.
+# fmt: off
 FRAGMENT_STARTS = {
     "about", "after", "all", "any", "as", "at", "based", "before", "by",
     "each", "how", "if", "in", "is", "it", "may", "of", "on", "or", "our",
     "please", "refer", "see", "that", "this", "to", "we", "what", "when",
     "will", "you", "your",
 }
+# fmt: on
 
 
 def _is_card_like(label: str) -> bool:
@@ -138,7 +142,7 @@ class CardTerms:
         candidates: int = 50,
         prompt: str = "answer_v3",
         provider: str = "groq",
-        model: str | None = "llama-3.1-8b-instant",
+        model: str | None = "openai/gpt-oss-20b",
     ) -> None:
         self.config = ExperimentConfig.from_yaml(config_path)
         self.chunk_set = chunk_set

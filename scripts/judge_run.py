@@ -31,7 +31,7 @@ def main() -> None:
     parser.add_argument("--run-id", required=True, help="run id prefix")
     parser.add_argument("--prompt", default="judge_v1")
     parser.add_argument("--provider", default="groq")
-    parser.add_argument("--model", default="llama-3.1-8b-instant")
+    parser.add_argument("--model", default="openai/gpt-oss-20b")
     args = parser.parse_args()
 
     configure_logging(json_output=False)
@@ -75,7 +75,16 @@ def main() -> None:
             )
             verdict = str(result.get("verdict", "")).strip().lower()
             reason = str(result.get("reason", ""))[:200]
-        except Exception as error:  # noqa: BLE001 - one bad grade must not stop the run
+        except Exception as error:
+            # A single refusal is survivable; an exhausted daily quota is not.
+            # Continuing past it fills the file with errors that look like
+            # verdicts, and calibrating against that file silently reports
+            # agreement on the handful of questions graded before the wall.
+            if "tokens per day" in str(error).lower():
+                raise SystemExit(
+                    f"daily token quota exhausted after {len(graded)} of {len(rows)} "
+                    f"questions — nothing written; rerun after the quota resets"
+                ) from error
             log.warning("judge_failed", question=row["question_uid"], error=str(error))
             verdict, reason = "", "judge error"
 

@@ -9,6 +9,7 @@ answer, and the API exists to make that possible.
     uv run uvicorn cardterms.api:app --reload
 """
 
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -30,7 +31,16 @@ async def lifespan(app: FastAPI):
     entity vocabulary take tens of seconds and are reused by every request."""
     global service
     configure_logging(json_output=False)
-    service = CardTerms()
+    # The generator is chosen at startup rather than in code. Hosted models are
+    # retired and rate limits are exhausted on the provider's schedule, not
+    # ours, and swapping to the local fallback or a different hosted model
+    # should not require editing a source file.
+    overrides = {}
+    if provider := os.getenv("CARDTERMS_PROVIDER"):
+        overrides["provider"] = provider
+    if model := os.getenv("CARDTERMS_MODEL"):
+        overrides["model"] = model
+    service = CardTerms(**overrides)
     yield
     service.close()
 

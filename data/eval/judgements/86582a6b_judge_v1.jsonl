@@ -1,59 +1,59 @@
-{"question_uid": "1st_united_platinum_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference in terms of APR range and conditions."}
-{"question_uid": "apple_card_coowner_removal", "category": "single_fact", "verdict": "wrong", "reason": "The assistant's answer implies that removal of a co-owner is possible, whereas the reference answer states it is not."}
-{"question_uid": "bealls_outlet_purchase_apr", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "burkes_outlet_min_interest", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "cmp_annual_fee_iberia_vs_suncountry", "category": "comparison", "verdict": "correct", "reason": "The assistant's answer directly states the same comparison as the reference."}
-{"question_uid": "cmp_late_fee_commerce_vs_marine", "category": "comparison", "verdict": "wrong", "reason": "Assistant's answer states Marine Federal's fee is higher, not Commerce Bank's."}
-{"question_uid": "cmp_late_fee_smilecare_vs_commerce", "category": "comparison", "verdict": "wrong", "reason": "The assistant's answer states the same fee for both accounts, whereas the reference answer states the My Smile Care fee is higher."}
-{"question_uid": "cmp_min_interest_jcpenney_vs_burkes", "category": "comparison", "verdict": "correct", "reason": "The assistant's answer correctly states that the JCPenney credit card has a lower minimum interest charge."}
-{"question_uid": "cmp_min_interest_phillips_vs_jcpenney", "category": "comparison", "verdict": "correct", "reason": "The assistant's answer states the same fact as the reference."}
-{"question_uid": "cmp_onpoint_platinum_variants", "category": "comparison", "verdict": "wrong", "reason": "The assistant's answer has a different APR range than the reference."}
-{"question_uid": "cmp_saks_variants_apr", "category": "comparison", "verdict": "wrong", "reason": "The assistant's answer does not address the question of which card is cheaper for carrying a balance."}
-{"question_uid": "cmp_secured_annual_fee", "category": "comparison", "verdict": "wrong", "reason": "The assistant's answer states a different annual fee for the Mission Lane Secured Visa than the reference."}
-{"question_uid": "comenity_smilecare_late_fee", "category": "single_fact", "verdict": "partial", "reason": "The assistant's answer provides additional context but the core fact is the same."}
-{"question_uid": "commerce_first_late_fee", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference's late payment fee for the first occurrence."}
-{"question_uid": "elga_business_apr", "category": "table_lookup", "verdict": "partial", "reason": "The assistant's answer omits the variable relationship to the Prime Rate."}
-{"question_uid": "iberia_annual_fee", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "iberia_foreign_transaction", "category": "table_lookup", "verdict": "wrong", "reason": "The assistant's answer states that a foreign transaction fee is charged, which contradicts the reference answer."}
-{"question_uid": "jcpenney_card_min_interest", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "jcpenney_mastercard_promo_interest", "category": "single_fact", "verdict": "partial", "reason": "The assistant's answer omits the fact that interest is charged retroactively."}
-{"question_uid": "jcpenney_mastercard_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer conveys the same fact as the reference, including the specific APR value."}
-{"question_uid": "marine_credit_builder_annual_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference in terms of the presence and amount of the annual fee."}
-{"question_uid": "marine_credit_builder_secured_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer in terms of APR."}
-{"question_uid": "marine_late_payment_fee", "category": "single_fact", "verdict": "partial", "reason": "The assistant's answer includes extra information not present in the reference."}
-{"question_uid": "mission_lane_secured_annual_fee", "category": "table_lookup", "verdict": "correct", "reason": "The assistant's answer matches the reference in terms of content and wording."}
-{"question_uid": "mission_lane_secured_purchase_apr", "category": "table_lookup", "verdict": "correct", "reason": "The assistant's answer matches the reference in terms of the purchase APR range."}
-{"question_uid": "mission_lane_webbank_issuer", "category": "entity_confusable", "verdict": "wrong", "reason": "The assistant's answer lists two banks, whereas the reference answer states only one."}
-{"question_uid": "myacademy_rewards_phone", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference exactly."}
-{"question_uid": "myacademy_world_phone", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "nissan_signature_cash_advance_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference in wording and detail."}
-{"question_uid": "nissan_signature_min_interest", "category": "table_lookup", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "nissan_signature_purchase_apr", "category": "single_fact", "verdict": "partial", "reason": "The assistant's answer provides two different APRs, but the reference only mentions one."}
-{"question_uid": "nissan_signature_returned_payment", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer in terms of the figure."}
-{"question_uid": "occu_unauthorized_liability", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer in terms of the maximum charge."}
-{"question_uid": "onpoint_governing_law", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer in terms of the state's law governing the agreement."}
-{"question_uid": "onpoint_platinum_bt_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer in terms of content."}
-{"question_uid": "onpoint_platinum_rewards_bt_apr", "category": "entity_confusable", "verdict": "wrong", "reason": "assistant's answer has a different APR range than the reference"}
-{"question_uid": "opensky_gold_annual_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "opensky_gold_cash_advance", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer conveys the same fact as the reference, with minor wording differences."}
-{"question_uid": "opensky_gold_foreign_transaction", "category": "table_lookup", "verdict": "correct", "reason": "Both answers convey the same fact about the OpenSky Gold card's foreign transaction fee."}
-{"question_uid": "opensky_plus_annual_fee", "category": "entity_confusable", "verdict": "wrong", "reason": "The assistant's answer states that the OpenSky Plus card charges an annual fee, which contradicts the reference answer."}
-{"question_uid": "opensky_plus_late_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer for the first late payment."}
-{"question_uid": "phillips66_min_interest", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "saks_credit_card_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "saks_world_elite_phone", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "saks_world_mastercard_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference in terms of the purchase APR."}
-{"question_uid": "smart_option_visa_margin", "category": "entity_confusable", "verdict": "wrong", "reason": "The assistant's answer is missing the upper limit mentioned in the reference."}
-{"question_uid": "southern_bank_expedited_card", "category": "single_fact", "verdict": "wrong", "reason": "The assistant's answer mentions a different charge for expedited delivery, not a replacement card delivered quickly."}
-{"question_uid": "sun_country_annual_fee", "category": "table_lookup", "verdict": "correct", "reason": "The assistant's answer matches the reference answer exactly."}
-{"question_uid": "synchrony_preferred_min_payment_cap", "category": "single_fact", "verdict": "wrong", "reason": "The assistant's answer implies the minimum payment can be more than the full balance, which contradicts the reference answer."}
-{"question_uid": "synchrony_preferred_paper_statement", "category": "single_fact", "verdict": "wrong", "reason": "The assistant's answer provides a method to avoid the fee, but the fee amount is not the same as the reference."}
-{"question_uid": "target_mastercard_annual_fee", "category": "single_fact", "verdict": "wrong", "reason": "The assistant's answer states the opposite of the reference answer."}
-{"question_uid": "target_mastercard_cash_advance", "category": "table_lookup", "verdict": "wrong", "reason": "The assistant's answer does not mention the minimum and maximum fees."}
-{"question_uid": "target_mastercard_returned_payment", "category": "entity_confusable", "verdict": "partial", "reason": "omits the 'up to' wording from the reference"}
-{"question_uid": "td_wellsville_apr", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference answer in terms of content."}
-{"question_uid": "unans_alliant_billing_rights", "category": "unanswerable", "verdict": "wrong", "reason": "The assistant's answer refers to a different card agreement."}
-{"question_uid": "unans_amex_platinum_apr", "category": "unanswerable", "verdict": "wrong", "reason": "The assistant's answer provides APR figures, but the Platinum Card is a charge card with no APR disclosed."}
-{"question_uid": "venmo_cash_advance_fee", "category": "single_fact", "verdict": "correct", "reason": "The assistant's answer matches the reference in wording and detail."}
-{"question_uid": "venmo_paper_statement_fee", "category": "table_lookup", "verdict": "correct", "reason": "The assistant's answer matches the reference in terms of the existence and amount of the fee."}
-{"question_uid": "venmo_signature_foreign_transaction", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant's answer matches the reference answer."}
+{"question_uid": "1st_united_platinum_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant provides the same APR range (13.90% to 23.90%) and cites creditworthiness, matching the reference."}
+{"question_uid": "apple_card_coowner_removal", "category": "single_fact", "verdict": "wrong", "reason": "Assistant says you can remove a co-owner, contradicting the reference that removal is not possible."}
+{"question_uid": "bealls_outlet_purchase_apr", "category": "single_fact", "verdict": "correct", "reason": "The assistant states the purchase APR as 35.99%, matching the reference."}
+{"question_uid": "burkes_outlet_min_interest", "category": "single_fact", "verdict": "correct", "reason": "Assistant states $3.00, matching the reference answer"}
+{"question_uid": "cmp_annual_fee_iberia_vs_suncountry", "category": "comparison", "verdict": "correct", "reason": "The assistant correctly states Iberia's fee is $95 and Sun Country's is $89, matching the reference."}
+{"question_uid": "cmp_late_fee_commerce_vs_marine", "category": "comparison", "verdict": "wrong", "reason": "Assistant incorrectly states Marine Federal has the higher fee, contradicting the reference that Commerce Bank's fee is higher"}
+{"question_uid": "cmp_late_fee_smilecare_vs_commerce", "category": "comparison", "verdict": "wrong", "reason": "Assistant gave incorrect fee amounts, stating both are $29, contradicting the reference that My Smile Care is up to $40."}
+{"question_uid": "cmp_min_interest_jcpenney_vs_burkes", "category": "comparison", "verdict": "correct", "reason": "The answer correctly states JCPenney's $2.00 minimum versus Burkes' $3.00, matching the reference."}
+{"question_uid": "cmp_min_interest_phillips_vs_jcpenney", "category": "comparison", "verdict": "correct", "reason": "The assistant states both cards have a $2.00 minimum interest charge, matching the reference."}
+{"question_uid": "cmp_onpoint_platinum_variants", "category": "comparison", "verdict": "wrong", "reason": "The assistant gave a different APR range (14.25%-18.75%) than the reference (13.25%-23.75%)."}
+{"question_uid": "cmp_saks_variants_apr", "category": "comparison", "verdict": "wrong", "reason": "The answer discusses minimum payment rules instead of the APR comparison given in the reference."}
+{"question_uid": "cmp_secured_annual_fee", "category": "comparison", "verdict": "wrong", "reason": "Assistant gives $29 for Mission Lane, but reference says $0 to $59"}
+{"question_uid": "comenity_smilecare_late_fee", "category": "single_fact", "verdict": "wrong", "reason": "Assistant adds a $41 fee and conditions, contradicting the reference's simple up to $40 statement."}
+{"question_uid": "commerce_first_late_fee", "category": "single_fact", "verdict": "correct", "reason": "The assistant answer matches the reference answer exactly."}
+{"question_uid": "elga_business_apr", "category": "table_lookup", "verdict": "correct", "reason": "Provides the same APR figure of 14.75% as the reference."}
+{"question_uid": "iberia_annual_fee", "category": "single_fact", "verdict": "correct", "reason": "The assistant states the annual fee as $95, matching the reference answer."}
+{"question_uid": "iberia_foreign_transaction", "category": "table_lookup", "verdict": "wrong", "reason": "Assistant states a foreign transaction fee exists, contradicting the reference's claim of no fee."}
+{"question_uid": "jcpenney_card_min_interest", "category": "entity_confusable", "verdict": "correct", "reason": "Assistant gives the same $2.00 minimum interest charge"}
+{"question_uid": "jcpenney_mastercard_promo_interest", "category": "single_fact", "verdict": "correct", "reason": "The assistant states interest is charged from the purchase date, matching the reference."}
+{"question_uid": "jcpenney_mastercard_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant states the purchase APR is 33.24% variable, matching the reference."}
+{"question_uid": "marine_credit_builder_annual_fee", "category": "entity_confusable", "verdict": "correct", "reason": "Assistant states the same $29 annual fee as the reference"}
+{"question_uid": "marine_credit_builder_secured_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant states the same APR of 18.00% as the reference."}
+{"question_uid": "marine_late_payment_fee", "category": "single_fact", "verdict": "correct", "reason": "The assistant states $27 for the first late payment and $35 for subsequent ones, matching the reference."}
+{"question_uid": "mission_lane_secured_annual_fee", "category": "table_lookup", "verdict": "correct", "reason": "The assistant states the same $0 to $59 annual fee range as the reference."}
+{"question_uid": "mission_lane_secured_purchase_apr", "category": "table_lookup", "verdict": "correct", "reason": "The assistant gives the same APR range as the reference"}
+{"question_uid": "mission_lane_webbank_issuer", "category": "entity_confusable", "verdict": "wrong", "reason": "Assistant lists an extra bank, contradicting the reference that the issuer is WebBank only."}
+{"question_uid": "myacademy_rewards_phone", "category": "entity_confusable", "verdict": "correct", "reason": "Provides the same phone number as the reference answer"}
+{"question_uid": "myacademy_world_phone", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant answer matches the reference number exactly."}
+{"question_uid": "nissan_signature_cash_advance_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant states the cash advance fee as $10 or 4% of the advance, whichever is greater, matching the reference."}
+{"question_uid": "nissan_signature_min_interest", "category": "table_lookup", "verdict": "correct", "reason": "The assistant states the same $2.00 charge as the reference."}
+{"question_uid": "nissan_signature_purchase_apr", "category": "single_fact", "verdict": "wrong", "reason": "Assistant adds an extra 13.99% option, contradicting the reference which states only prime plus 19.99%"}
+{"question_uid": "nissan_signature_returned_payment", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant states $29, matching the reference answer."}
+{"question_uid": "occu_unauthorized_liability", "category": "single_fact", "verdict": "correct", "reason": "Assistant states $50, matching the reference answer"}
+{"question_uid": "onpoint_governing_law", "category": "single_fact", "verdict": "correct", "reason": "The assistant states Oregon, matching the reference."}
+{"question_uid": "onpoint_platinum_bt_apr", "category": "entity_confusable", "verdict": "correct", "reason": "Matches the reference APR range exactly"}
+{"question_uid": "onpoint_platinum_rewards_bt_apr", "category": "entity_confusable", "verdict": "wrong", "reason": "The assistant gave a different APR range (16.25%-20.75%) than the reference (13.25%-23.75%)."}
+{"question_uid": "opensky_gold_annual_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant answer matches the reference answer exactly."}
+{"question_uid": "opensky_gold_cash_advance", "category": "single_fact", "verdict": "correct", "reason": "Matches the reference stating $10 or 3% whichever is greater"}
+{"question_uid": "opensky_gold_foreign_transaction", "category": "table_lookup", "verdict": "correct", "reason": "The assistant states the same 3% foreign transaction fee in US dollars as the reference."}
+{"question_uid": "opensky_plus_annual_fee", "category": "entity_confusable", "verdict": "wrong", "reason": "Assistant says the card has a fee, contradicting the reference's 'No'."}
+{"question_uid": "opensky_plus_late_fee", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant correctly states the first-time late fee of $30 as in the reference."}
+{"question_uid": "phillips66_min_interest", "category": "single_fact", "verdict": "correct", "reason": "The assistant states the same $2.00 minimum interest charge."}
+{"question_uid": "saks_credit_card_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant states the same purchase APR of 35.99% as the reference."}
+{"question_uid": "saks_world_elite_phone", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant provided the exact same phone number as the reference."}
+{"question_uid": "saks_world_mastercard_purchase_apr", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant gave the same purchase APR of 31.99%"}
+{"question_uid": "smart_option_visa_margin", "category": "entity_confusable", "verdict": "partial", "reason": "Only provides the lower bound 6.74% and omits the upper bound 15.74%."}
+{"question_uid": "southern_bank_expedited_card", "category": "single_fact", "verdict": "wrong", "reason": "Assistant gave $10, but reference states $35"}
+{"question_uid": "sun_country_annual_fee", "category": "table_lookup", "verdict": "correct", "reason": "The assistant states the same $89 annual fee as the reference."}
+{"question_uid": "synchrony_preferred_min_payment_cap", "category": "single_fact", "verdict": "wrong", "reason": "Assistant says the minimum payment can be more, contradicting the reference's 'No'."}
+{"question_uid": "synchrony_preferred_paper_statement", "category": "single_fact", "verdict": "correct", "reason": "The assistant states that selecting electronic statements avoids the paper statement fee, matching the reference."}
+{"question_uid": "target_mastercard_annual_fee", "category": "single_fact", "verdict": "wrong", "reason": "Assistant's answer contradicts the reference by stating 'Yes' instead of confirming no annual fee."}
+{"question_uid": "target_mastercard_cash_advance", "category": "table_lookup", "verdict": "wrong", "reason": "Assistant adds $10 to 3% instead of stating a $10 minimum"}
+{"question_uid": "target_mastercard_returned_payment", "category": "entity_confusable", "verdict": "correct", "reason": "Assistant states $30, matching the reference's up to $30 fee."}
+{"question_uid": "td_wellsville_apr", "category": "single_fact", "verdict": "correct", "reason": "The assistant states the same APR of 29.99% as the reference."}
+{"question_uid": "unans_alliant_billing_rights", "category": "unanswerable", "verdict": "wrong", "reason": "Assistant claims billing rights are in a section of a different card agreement, contradicting the reference that says billing rights are not stated."}
+{"question_uid": "unans_amex_platinum_apr", "category": "unanswerable", "verdict": "wrong", "reason": "Assistant provides APR figures whereas reference states no APR is disclosed"}
+{"question_uid": "venmo_cash_advance_fee", "category": "single_fact", "verdict": "correct", "reason": "Matches the reference stating $10 or 5% whichever greater"}
+{"question_uid": "venmo_paper_statement_fee", "category": "table_lookup", "verdict": "correct", "reason": "Matches the reference stating a $1.99 per month charge"}
+{"question_uid": "venmo_signature_foreign_transaction", "category": "entity_confusable", "verdict": "correct", "reason": "The assistant states the card does not charge a foreign transaction fee, matching the reference answer."}

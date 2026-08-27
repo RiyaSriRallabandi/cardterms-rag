@@ -29,7 +29,7 @@ INTERESTING = (
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", default="llama-3.3-70b-versatile")
+    parser.add_argument("--model", default="openai/gpt-oss-20b")
     args = parser.parse_args()
 
     settings = Settings()

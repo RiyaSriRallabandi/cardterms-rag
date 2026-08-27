@@ -938,3 +938,118 @@ left uncorrected.
 Deployment: Postgres runs in Docker, the application runs on the host. A
 container cannot reach the Mac GPU, so the reranker would fall back to CPU and
 the dominant stage would get materially slower.
+
+---
+
+## Task 14 — Documentation, and requalifying a retired generator
+
+Written: `README.md`, `REPORT.md`, `.env.example`. The report is organised by
+decision rather than by component: what was measured, what the measurement
+showed, and what was done differently as a result.
+
+Partway through, the shipped system stopped working. Groq retired the entire
+Llama family and `llama-3.1-8b-instant` began returning 404 on every request.
+Nothing in the repository had changed, which took a while to establish.
+
+Replacement: `openai/gpt-oss-20b`, the closest available open-weight model.
+It emits a reasoning trace by default, which breaks the grounding contract's
+one-sentence-with-citation format, so `reasoning_effort` is pinned low. An
+8-question smoke test confirmed the citation format parsed before spending the
+daily budget on a full run.
+
+Full re-run, 76 questions, identical retrieval configuration:
+
+| | frozen (llama-3.1-8b) | re-run (gpt-oss-20b) |
+|---|---|---|
+| End to end | 56/76 (73.7%) | **63/76 (82.9%)** |
+| doc_hit_rate@5 | 0.967 | 0.967 |
+| hit_rate@5 | 0.820 | 0.820 |
+| evidence@5 | 0.775 | 0.775 |
+| MRR | 0.608 | 0.608 |
+| Correct refusals | 13/15 | 14/15 |
+| Wrong with citation | 6 | 6 |
+| Local fallback | 63.2% | 69.7% |
+
+Failure attribution on the re-run: 63 correct (49 answered, 14 correctly
+refused), 8 retrieval-caused, 5 generation-caused. Of the 5, three are grounding
+failures on complete evidence, all APR-range or comparison questions where the
+wrong row of a fee table was read. The remaining two are one refusal despite
+complete evidence and one confabulation on an unanswerable question. The two
+known weak categories did not move: comparison remains lowest at 0.614 evidence
+coverage.
+
+Findings:
+
+- **Retrieval returned identical to four decimal places.** This is the expected
+  result when only the generator changes, and it is worth stating because it is
+  also the check: a pipeline that had silently drifted while the project sat
+  would not reproduce its own retrieval numbers.
+- **The harness is what made this an afternoon.** Requalifying a replacement
+  generator was one command against a frozen golden set, then one judging pass.
+  Without span-level labels and a calibrated judge, the honest options would
+  have been to re-label by hand or to report a number that could no longer be
+  produced.
+- **The judge had been grading its own model's output.** Calibration was
+  originally measured with the generator as judge, which is the arrangement most
+  prone to self-preference. Moving the judge to a larger, different model and
+  re-measuring against the same 30 hand labels raised Cohen's κ from 0.871 to
+  0.929, with one disagreement in 30 and that one in the lenient direction. The
+  hand labels are the durable asset here; both judges were graded against them.
+- **Free-tier daily token limits are per model, not per account.** 200,000
+  tokens per day, and a full evaluation consumes nearly all of one model's
+  budget. The per-minute headers reported by `check_groq_limits.py` say nothing
+  about the daily cap, which is why an exhausted quota first appeared as an
+  unexplained wall of failures. Switching models restores a full budget
+  immediately; waiting is unnecessary.
+- **A quota error is not a per-question error.** `judge_run.py` caught the
+  exception per question and continued, writing 53 records of `"judge error"`
+  that were indistinguishable from verdicts in the output file, and calibration
+  against that file would have reported agreement over the six questions graded
+  before the wall. Recoverable failures and terminal ones need different
+  handling; the script now aborts and writes nothing.
+- **The generator is now chosen at startup, not in code.** `CARDTERMS_PROVIDER`
+  and `CARDTERMS_MODEL` override the default. Models are retired and quotas are
+  exhausted on the provider's schedule, and swapping to the local fallback
+  should not require editing a source file.
+- **Latency re-measured on the new generator**, 9 questions, same machine:
+  retrieve 94 ms, rerank 6,947 ms, generate 693 ms, total 7,652 ms p50, cold
+  start 7.7 s. Faster than the retired model despite emitting a reasoning trace,
+  and the stage shares are unchanged at 1 / 90 / 9. The Task 13 conclusion holds
+  under a different generator, which is the stronger form of that finding.
+  Sustained throughput is about 1.3 questions per minute, with a median 38 s
+  wait for token budget, reported separately from latency.
+- **The local fallback earned its place.** It was built as a cost control and
+  turned out to be the only path unaffected by any of this. Re-graded under the
+  new judge it answers 69.7% correctly, 13 points behind the hosted model. The
+  two configurations differ only in the generator and the error analysis
+  separates cleanly: 5 generation-caused failures hosted against 14 local, of
+  which 3 and 10 are grounding failures on evidence complete in both. The small
+  model retrieves the same passages and misreads them.
+
+---
+
+## Final state
+
+Corpus `corpus-v1`, chunks `parsed-v1`, golden set `golden-v1`, evaluation
+`eval-v2`. Run `45177744`, generator `openai/gpt-oss-20b`, judge
+`openai/gpt-oss-120b`, prompt `answer_v3`, entity selection and clarification
+gate on.
+
+| | |
+|---|---|
+| End to end correct | 63/76 (82.9%) |
+| Document retrieval | 96.7% |
+| hit_rate@5 | 82.0% |
+| evidence@5 | 77.5% |
+| MRR | 0.608 |
+| Correct refusals | 14/15 |
+| Wrong answers carrying a citation | 6 (7.9%) |
+| Judge agreement with hand labels (κ) | 0.929 |
+| Median response | 7.7 s |
+| Cost | $0 |
+
+Local fallback, `llama3.2:3b` via Ollama: 69.7%, no network, no rate limit.
+
+Weakest category: comparison questions, 0.614 evidence coverage. First thing to
+try next: structured extraction of fee tables, since the remaining grounding
+failures are wrong-row reads on APR ranges.

@@ -42,7 +42,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--n", type=int, default=20, help="questions to time")
     parser.add_argument("--provider", default="groq")
-    parser.add_argument("--model", default="llama-3.1-8b-instant")
+    parser.add_argument("--model", default="openai/gpt-oss-20b")
     args = parser.parse_args()
 
     configure_logging(json_output=False)

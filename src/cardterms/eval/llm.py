@@ -16,7 +16,13 @@ from cardterms.config import Settings
 GROQ_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions"
 OLLAMA_ENDPOINT = "http://localhost:11434/api/chat"
 
-DEFAULT_MODELS = {"groq": "llama-3.3-70b-versatile", "ollama": "llama3.2:3b"}
+DEFAULT_MODELS = {"groq": "openai/gpt-oss-20b", "ollama": "llama3.2:3b"}
+
+# gpt-oss models emit a reasoning trace before their answer. The grounding
+# contract asks for a short quote-backed sentence, and a visible chain of
+# thought both breaks that format and inflates latency, so reasoning is held
+# at the lowest setting the provider allows.
+REASONING_MODELS = ("openai/gpt-oss-20b", "openai/gpt-oss-120b")
 
 TIMEOUT_SECONDS = 180
 MAX_RETRIES = 6
@@ -29,8 +35,8 @@ MAX_BACKOFF_SECONDS = 90
 # periods longer than any sane backoff. Pacing client-side is cheaper than
 # retrying, and keeps a full evaluation inside the free tier.
 MODEL_TPM = {
-    "llama-3.3-70b-versatile": 12_000,
-    "llama-3.1-8b-instant": 6_000,
+    "openai/gpt-oss-20b": 8_000,
+    "openai/gpt-oss-120b": 8_000,
 }
 DEFAULT_TPM = 6_000
 TPM_HEADROOM = 0.85
@@ -78,6 +84,8 @@ def _groq(messages: list[dict], model: str, temperature: float, json_mode: bool)
     payload: dict = {"model": model, "messages": messages, "temperature": temperature}
     if json_mode:
         payload["response_format"] = {"type": "json_object"}
+    if model in REASONING_MODELS:
+        payload["reasoning_effort"] = "low"
 
     headers = {"Authorization": f"Bearer {_settings.groq_api_key}"}
     response = None
